@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Folder UI — Preview</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@800&family=Bebas+Neue&family=Cormorant+Garamond:wght@400&family=Instrument+Serif&family=Inter:wght@800&family=JetBrains+Mono:wght@700&family=Space+Grotesk:wght@700&family=Space+Mono:wght@700&display=swap"
+  rel="stylesheet" />
+
+<style>
+  @font-face {
+    font-family: "PP Palma Fizzy Heavy";
+    src: url("/fonts/PPPalma-FizzyHeavy.otf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "PP Palma Medium";
+    src: url("/fonts/PPPalma-Medium.otf") format("opentype");
+    font-display: swap;
+  }
+
+  :root {
+    /* 폴더 밖 — 사이트 기존 3색 언어 유지 */
+    --dim: #8a8a8a;
+    --point: #ffe345;
+    --danger: #ff3b30;
+    --bg: #b2b2b2;
+    --paper-dark: #2a2a2a;
+
+    --side-margin: 100px;
+    --row: 66px;        /* 접힌 폴더 한 줄 높이 */
+    --extra: 318px;     /* 펼쳤을 때 늘어나는 높이 */
+    --tab-step: 104px;  /* 탭 대각선 계단 간격 */
+    --stagger: 55ms;
+    --closed-step: 30px;  /* 접힘 상태의 폴더 간격 */
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 배경 질감 — 사이트와 동일 */
+  .bgLayer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; }
+  .b1 { width: 46vw; height: 46vw; background: #fff; left: -8vw; top: -10vw; animation: d1 28s ease-in-out infinite; }
+  .b2 { width: 38vw; height: 38vw; background: #1a1a1a; right: -6vw; top: 8vh; animation: d2 34s ease-in-out infinite; }
+  .b3 { width: 30vw; height: 30vw; background: #1a1a1a; left: 18vw; bottom: -12vw; animation: d3 40s ease-in-out infinite; }
+  @keyframes d1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(6vw,8vh)} }
+  @keyframes d2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-8vw,10vh)} }
+  @keyframes d3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(10vw,-6vh)} }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    padding: 0 var(--side-margin);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stack {
+    position: relative;
+    width: 100%;
+    max-width: 1140px;
+    height: 82vh;
+  }
+
+  /* ── 폴더 ────────────────────────────────────────────── */
+  .folder {
+    position: absolute;
+    left: 0; right: 0;
+    cursor: pointer;
+    transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+
+  /* 탭 — 피쳐 무드 컬러. 대각선 계단으로 어긋나 배치 */
+  .tab {
+    position: absolute;
+    top: -26px;
+    height: 28px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--ink);
+    border-radius: 10px 10px 0 0;
+    transition: filter 300ms ease;
+  }
+  .tab::after {
+    content: "";
+    position: absolute;
+    right: -15px; bottom: 0;
+    width: 17px; height: 100%;
+    background: var(--ink);
+    clip-path: polygon(0 0, 55% 0, 100% 100%, 0 100%);
+  }
+  .tabLabel {
+    font-family: "PP Palma Medium", system-ui, sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    color: #fff;
+    opacity: 0.92;
+    white-space: nowrap;
+  }
+
+  /* 폴더 본체 — 화이트 계열 */
+  .body {
+    /* 접힘: 한 줄 + 16px 만 남겨 다음 폴더가 겹쳐 덮는 서류철 층 느낌.
+       펼침: 리스트 높이만큼 늘어난다. 고정 높이를 쓰면 마지막 폴더
+       아래에 빈 여백이 크게 남는다. */
+    height: calc(var(--row) + 16px);
+    background: var(--paper);
+    transition: height 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 3px 16px 16px 16px;
+    overflow: hidden;
+    box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.15);
+  }
+
+  /* 접힌 상태에 보이는 한 줄 — 라벨 + 설명 */
+  .head {
+    height: var(--row);
+    padding: 0 34px;
+    display: grid;
+    grid-template-columns: minmax(200px, 24%) 1fr auto;
+    align-items: center;
+    gap: 28px;
+  }
+  .headLabel {
+    font-family: var(--font);
+    font-size: var(--size, 30px);
+    line-height: 1;
+    letter-spacing: var(--tracking, -0.02em);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .headDesc {
+    font-family: "PP Palma Medium", system-ui, sans-serif;
+    font-size: 11.5px;
+    line-height: 1.3;
+    color: #7d7d7d;
+  }
+  .headCount {
+    font-family: "PP Palma Medium", system-ui, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    opacity: 0.55;
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  /* 펼쳤을 때 나오는 리스트 */
+  .inner {
+    height: var(--extra);
+    padding: 4px 34px 26px;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  .folder.isOpen .body { height: calc(var(--row) + var(--extra)); }
+  /* 레퍼런스와 동일한 두 상태.
+     접힘(closed): 본체가 겹쳐 숨고 탭만 대각선 계단으로 넓게 퍼진다.
+     펼침(open):   행이 보이고 탭은 숨는다 — 탭을 함께 띄우면 행 라벨과
+                   반드시 충돌하기 때문(9개로 늘리며 실측 확인). */
+  .tab { transition: filter 300ms ease, opacity 340ms ease, left 620ms cubic-bezier(0.16,1,0.3,1); }
+  .head { transition: opacity 340ms ease; }
+
+  .stack.closed .head { opacity: 0; }
+  .stack.closed .tab  { opacity: 1; }
+  .stack.open   .tab  { opacity: 0; pointer-events: none; }
+  .stack.open   .head { opacity: 1; }
+  .folder.isOpen .inner { opacity: 1; transition-delay: 200ms; }
+
+  .list {
+    margin: 0; padding: 0 8px 0 0;
+    list-style: none;
+    height: 100%;
+    overflow-y: auto;
+    border-top: 1.5px solid var(--ink);
+    scrollbar-width: thin;
+  }
+  .list::-webkit-scrollbar { width: 5px; }
+  .list::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 3px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(210px, 26%) 1fr auto;
+    align-items: baseline;
+    gap: 28px;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    text-decoration: none;
+    transition: padding-left 220ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .row:hover { padding-left: 10px; }
+  .rowName {
+    font-family: var(--font);
+    font-size: 17px;
+    color: #3c3c3c;
+    letter-spacing: var(--tracking, -0.01em);
+    transition: color 180ms ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row:hover .rowName { color: var(--ink); }
+  .rowNote {
+    font-family: "PP Palma Medium", system-ui, sans-serif;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #969696;
+    transition: color 180ms ease;
+  }
+  .row:hover .rowNote { color: #5f5f5f; }
+  .rowAdd {
+    font-family: "PP Palma Medium", system-ui, sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 180ms ease;
+  }
+  .row:hover .rowAdd { opacity: 0.9; }
+
+  /* ══ 폴더 밖 — 기존 3색 언어 ═══════════════════════════ */
+
+  /* Hit me — 우상단 고정 */
+  .hitWrap {
+    position: fixed;
+    top: 34px;
+    right: var(--side-margin);
+    z-index: 70;
+  }
+  .hitBtn {
+    position: relative;
+    display: block;
+    padding: 10px 4px;
+    border: none;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .hitStage { position: relative; display: inline-block; }
+  .hitLabel {
+    margin: 0;
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 30px;
+    line-height: 0.9em;
+    letter-spacing: -0.02em;
+    white-space: pre;
+    user-select: none;
+  }
+  .hitBase { color: var(--dim); }
+  .hitFillLayer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    transition: clip-path 320ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+  .hitFill { color: var(--point); }
+  .dripLayer { position: absolute; left: 0; right: 0; top: 100%; pointer-events: none; }
+  .dripTrail {
+    position: absolute;
+    top: -5px;
+    width: 4px; height: 0;
+    background: var(--point);
+    border-radius: 0 0 2px 2px;
+    transform: translateX(-50%);
+    animation: rv-drip 1.6s cubic-bezier(0.4, 0, 0.7, 0.35) forwards;
+  }
+  @keyframes rv-drip { from { height: 0; } to { height: 54px; } }
+
+  /* 제출 모달 — 사이트와 동일한 딤+블러, 다크 카드 */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .backdrop.on { display: flex; }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 26px;
+    width: min(520px, 84vw);
+    padding: 30px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 30px;
+  }
+  .field {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2.5px solid var(--point);
+    border-radius: 14px;
+    background: transparent;
+    outline: none;
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 24px;
+    color: var(--point);
+  }
+  .field::placeholder { color: var(--point); opacity: 0.55; }
+  .fieldDim { border-color: rgba(255,227,69,0.55); }
+  .errorText {
+    align-self: flex-start;
+    margin: -18px 0 0;
+    font-family: "PP Palma Medium", sans-serif;
+    font-size: 12px;
+    color: var(--danger);
+  }
+  .submitBtn {
+    padding: 11px 30px;
+    border: 2.5px solid var(--point);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--point);
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 17px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 200ms ease;
+  }
+  .submitBtn.active { opacity: 1; }
+  .stateMsg {
+    width: 100%;
+    text-align: center;
+    padding: 26px 0 10px;
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 30px;
+    color: var(--point);
+  }
+  .stateSub {
+    width: 100%;
+    text-align: center;
+    font-family: "PP Palma Medium", sans-serif;
+    font-size: 11px;
+    color: var(--point);
+    opacity: 0.75;
+  }
+
+  /* Vault 뱃지 — 폴더 밖이므로 3색 */
+  .vault {
+    position: fixed;
+    right: var(--side-margin);
+    bottom: 34px;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: "PP Palma Medium", sans-serif;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    color: var(--paper-dark);
+    opacity: 0.38;
+    transition: opacity 240ms ease;
+    pointer-events: none;
+  }
+  .vault.has { opacity: 1; }
+  .vaultNum {
+    min-width: 22px; height: 22px;
+    display: grid; place-items: center;
+    background: var(--paper-dark); color: var(--point);
+    border-radius: 999px; font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="bgLayer">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
+
+<!-- Hit me — 우상단 고정, 4타 채움 + 드립 (사이트와 동일) -->
+<div class="hitWrap">
+  <button class="hitBtn" id="hitBtn" aria-label="Hit me !">
+    <span class="hitStage" id="hitStage">
+      <p class="hitLabel hitBase">Hit me !</p>
+      <span class="hitFillLayer" id="hitFillLayer" style="clip-path: inset(100% 0 0 0)">
+        <p class="hitLabel hitFill" id="hitFillText">Hit me !</p>
+      </span>
+    </span>
+  </button>
+</div>
+
+<div class="stage">
+  <div class="stack" id="stack"></div>
+</div>
+
+<div class="vault" id="vault"><span>VAULT</span><span class="vaultNum" id="vaultNum">0</span></div>
+
+<!-- 링크 추가 모달 -->
+<div class="backdrop" id="backdrop">
+  <div class="panel" id="panel"></div>
+</div>
+
+<script>
+const FEATURES = [
+  { key:"web", label:"WEB", desc:"웹사이트 전체의 비주얼과 레이아웃 레퍼런스",
+    paper:"#F6F9FC", ink:"#12457A", font:"'Space Grotesk', sans-serif", tracking:"-0.03em",
+    items:[
+      {name:"AWWWARDS", note:"웹 인터랙션의 상한선. 모션·전환 레퍼런스가 필요할 때"},
+      {name:"GODLY", note:"실험적인 웹만 큐레이션. 유행의 최전선이라 절제해서 참고"},
+      {name:"LAND-BOOK", note:"랜딩페이지만 모은 갤러리. 섹션 구성과 카피 길이 참고"},
+      {name:"BRUTALIST WEBSITES", note:"브루탈리즘 웹만 모은 갤러리. 규칙을 깨는 레이아웃이 필요할 때"},
+      {name:"MINIMAL GALLERY", note:"미니멀한 웹사이트만 손으로 골라 담는 갤러리"},
+      {name:"THE RESPONSIVE", note:"반응형 디자인이 잘 된 사이트만 추린 갤러리"},
+      {name:"BEST WEBSITE GALLERY", note:"2008년부터 이어온 웹 디자인 갤러리. 축적된 양이 압도적"},
+      {name:"HALLO INTERNET", note:"동시대 인터넷 감각을 모으는 실험적 플랫폼"},
+      {name:"SITES WE LIKE", note:"독일 디자인 매체가 매일 북마크하는 웹사이트 모음"},
+      {name:"SITEINSPIRE", note:"스타일·타입별 필터가 정교하다. 타이포 중심 사이트 찾을 때"},
+    ]},
+  { key:"ui", label:"UI", desc:"화면 단위 패턴과 컴포넌트",
+    paper:"#F8F8F7", ink:"#26292B", font:"'Inter', sans-serif", tracking:"-0.045em",
+    items:[
+      {name:"MOBBIN", note:"실제 앱 화면을 플로우 단위로 모아둔 곳. UI 패턴 근거 찾을 때 1순위"},
+      {name:"EMPTY STATES", note:"데이터가 없을 때의 화면만 모은 갤러리. 놓치기 쉬운 상태 설계 참고"},
+      {name:"LITTLE BIG DETAILS", note:"UI의 사소하지만 인상적인 디테일만 수집. 마이크로 인터랙션 아이디어"},
+      {name:"UI GARAGE", note:"화면 유형별로 정리된 실제 앱 UI 패턴 모음"},
+      {name:"PATTERNINDEX", note:"유명 사이트와 책에서 뽑은 UI 디자인 패턴 레퍼런스"},
+      {name:"BAYMARD", note:"20만 시간 분량의 이커머스 UX 연구. 근거가 필요할 때"},
+      {name:"CALL TO INSPIRATION", note:"UI 디테일 패턴 모음. 마이크로 인터랙션 디테일 참고"},
+      {name:"CRAFTWORK", note:"UI킷·일러스트·목업·폰트를 함께 다루는 리소스 마켓"},
+    ]},
+  { key:"graphic", label:"GRAPHIC", desc:"인쇄·브랜딩·그래픽 전반",
+    paper:"#FDF6F1", ink:"#C2410C", font:"'Anton', sans-serif", tracking:"-0.005em", size:"27px",
+    items:[
+      {name:"BEHANCE", note:"포트폴리오 전량. 그래픽·브랜딩 물량이 압도적이라 스타일 탐색용"},
+      {name:"DRIBBBLE", note:"컨셉 위주. 실현 가능성보다 비주얼 감각 충전용"},
+      {name:"BP&O", note:"브랜딩·패키지 디자인 리뷰. 왜 좋은지까지 짚어주는 게 강점"},
+      {name:"TREND LIST", note:"2011년부터 그래픽 디자인의 시각적 유행을 기록해온 아카이브"},
+      {name:"DOSE OF DESIGN", note:"2010년부터 이어온 매일 한 컷 그래픽 디자인 큐레이션"},
+      {name:"CARI", note:"인터넷 미학(aesthetics)을 분류하고 이름 붙인 아카이브"},
+      {name:"NOTEFOLIO", note:"국내 디자이너 포트폴리오. 한글 타이포 처리 사례"},
+      {name:"IT'S NICE THAT", note:"디자인·일러스트·포토를 다루는 크리에이티브 컬처 에디토리얼 매체"},
+    ]},
+  { key:"type", label:"TYPE", desc:"폰트와 타이포그래피",
+    paper:"#FBF9F3", ink:"#1A1A1A", font:"'Instrument Serif', serif", tracking:"-0.01em", size:"34px",
+    items:[
+      {name:"NOONNU", note:"한글 무료 폰트. 라이선스 범위가 정리돼 있어 상업 사용 판단이 빠르다"},
+      {name:"SPACE TYPE GENERATOR", note:"우주적 무드의 키네틱 타입 제너레이터"},
+      {name:"TEXT CRYSTLIZER", note:"텍스트를 결정체처럼 굴절시키는 실험적 타이포그래피 제너레이터"},
+      {name:"ANOTHER GRAPHIC", note:"타이포그래피 중심의 그래픽 디자인 아카이브"},
+      {name:"TYPEWOLF", note:"실사용 중인 웹폰트 조합을 추적. 폰트 페어링 판단에 유용"},
+    ]},
+  { key:"motion", label:"MOTION", desc:"영상과 모션 그래픽",
+    paper:"#F5F5FA", ink:"#4C1D95", font:"'Bebas Neue', sans-serif", tracking:"0.03em", size:"34px",
+    items:[
+      {name:"MOTIONOGRAPHER", note:"모션 그래픽 업계의 기준선. 스튜디오 단위 작업 흐름까지 볼 수 있다"},
+      {name:"GOOD MOVES", note:"잘 만든 인터페이스 모션만 골라 모은 갤러리"},
+      {name:"LOTTIE FILES", note:"가벼운 벡터 애니메이션을 바로 가져다 쓸 수 있는 라이브러리"},
+    ]},
+  { key:"photo", label:"PHOTO", desc:"사진과 이미지 소재",
+    paper:"#F6F7F5", ink:"#3F5E4A", font:"'Cormorant Garamond', serif", tracking:"0.01em", size:"34px",
+    items:[
+      {name:"UNSPLASH", note:"고화질 무료 사진. 물량과 품질의 기준점"},
+      {name:"PEXELS", note:"사진과 영상을 함께 제공. 상업 사용 조건이 명확하다"},
+      {name:"PICJUMBO", note:"실용적인 배경·목업용 사진이 많다"},
+    ]},
+  { key:"color", label:"COLOR", desc:"색과 팔레트",
+    paper:"#FFF9F1", ink:"#DB2777", font:"'Baloo 2', system-ui, sans-serif", tracking:"-0.02em",
+    items:[
+      {name:"COLORMIND", note:"신경망으로 조화로운 팔레트를 뽑아주는 생성기"},
+      {name:"COLOR HUNT", note:"4색 팔레트를 빠르게 훑으며 고르기 좋다"},
+      {name:"HAPPY HUES", note:"팔레트를 실제 UI에 적용한 상태로 미리 보여준다"},
+    ]},
+  { key:"icon", label:"ICON", desc:"아이콘과 일러스트",
+    paper:"#F5F8F8", ink:"#0F766E", font:"'Space Mono', monospace", tracking:"-0.05em", size:"24px",
+    items:[
+      {name:"TABLER ICONS", note:"일관된 스트로크의 오픈소스 아이콘 세트. 수량이 넉넉하다"},
+      {name:"FEATHER", note:"군더더기 없는 24px 그리드 아이콘. 가장 무난한 기본값"},
+      {name:"PHOSPHOR ICONS", note:"굵기 6단계를 제공해 위계 조절이 쉽다"},
+      {name:"UNDRAW", note:"색을 바꿀 수 있는 일러스트. 빈 화면 채울 때"},
+    ]},
+  { key:"code", label:"CODE", desc:"구현과 기술 레퍼런스",
+    paper:"#F3F5F7", ink:"#111827", font:"'JetBrains Mono', monospace", tracking:"-0.06em", size:"24px",
+    items:[
+      {name:"CODEPEN", note:"인터랙션 실험을 코드째로 확인. 구현 가능성 판단이 빠르다"},
+      {name:"CODROPS", note:"웹 인터랙션 기법을 튜토리얼로 해체해 보여준다"},
+      {name:"MECHANIC", note:"커스텀 웹 기반 디자인 툴을 직접 만들 수 있는 오픈소스 프레임워크"},
+    ]},
+];
+
+const cssNum = (name, fb) =>
+  parseInt(getComputedStyle(document.documentElement).getPropertyValue(name), 10) || fb;
+
+const stack = document.getElementById("stack");
+let openIdx = null;
+let mode = "open";        // "closed" = 탭만, "open" = 행 펼침
+let entered = false;
+const vaultSet = new Set();
+
+FEATURES.forEach((f, i) => {
+  const el = document.createElement("article");
+  el.className = "folder";
+  el.dataset.idx = i;
+  el.style.setProperty("--paper", f.paper);
+  el.style.setProperty("--ink", f.ink);
+  el.style.setProperty("--font", f.font);
+  el.style.setProperty("--tracking", f.tracking);
+  if (f.size) el.style.setProperty("--size", f.size);
+  el.style.zIndex = 10 + i;   // 뒤 폴더가 앞 폴더 본체를 덮어 서류철처럼 겹친다
+
+  const rows = f.items.map((it) => `
+    <a class="row" href="#" data-add="${f.key}:${it.name}">
+      <span class="rowName">${it.name}</span>
+      <span class="rowNote">${it.note}</span>
+      <span class="rowAdd">+ VAULT</span>
+    </a>`).join("");
+
+  el.innerHTML = `
+    <div class="tab"><span class="tabLabel">${f.label}</span></div>
+    <div class="body">
+      <div class="head">
+        <span class="headLabel">${f.label}</span>
+        <span class="headDesc">${f.desc}</span>
+        <span class="headCount">${f.items.length}</span>
+      </div>
+      <div class="inner"><ul class="list">${rows}</ul></div>
+    </div>`;
+  stack.appendChild(el);
+});
+
+const folders = [...stack.querySelectorAll(".folder")];
+
+// 탭을 대각선 계단으로 — 레퍼런스와 동일하게 아래로 갈수록 오른쪽.
+// 레퍼런스는 폴더가 4개라 고정 간격으로 충분했지만 9개에서는 계단이
+// 스택 폭을 넘어 잘리고, 탭이 자기 행 라벨에서 최대 800px 떨어져
+// 시각적 연결이 끊긴다. 스택 폭의 일정 비율 안에 모두 들어오도록 계산한다.
+// 접힘 상태에서만 탭이 보이므로 계단은 스택 폭 전체를 써도 된다.
+// 행 라벨과 겹칠 일이 없기 때문 — 폭에 맞춰 넘치지만 않게 계산한다.
+function layoutTabs() {
+  const n = folders.length;
+  const stackW = stack.getBoundingClientRect().width;
+  const widest = Math.max(...folders.map((f) => f.querySelector(".tab").offsetWidth));
+  const room = Math.max(0, stackW - widest - 8);
+  const step = Math.min(cssNum("--tab-step", 104), room / Math.max(1, n - 1));
+  folders.forEach((el, i) => { el.querySelector(".tab").style.left = `${Math.round(i * step)}px`; });
+}
+layoutTabs();
+window.addEventListener("resize", layoutTabs);
+
+function layout() {
+  const row = cssNum("--row", 66);
+  const extra = cssNum("--extra", 318);
+  const closed = mode === "closed";
+
+  stack.classList.toggle("closed", closed);
+  stack.classList.toggle("open", !closed);
+
+  folders.forEach((el, i) => {
+    if (closed) {
+      // 탭만 보이도록 촘촘히 겹친다
+      el.style.transform = `translateY(${i * cssNum("--closed-step", 30)}px)`;
+      el.classList.remove("isOpen");
+    } else {
+      // 펼쳐진 폴더보다 아래에 있는 폴더들은 그만큼 밀려 내려간다
+      const push = openIdx !== null && i > openIdx ? extra : 0;
+      el.style.transform = `translateY(${i * row + push}px)`;
+      el.classList.toggle("isOpen", openIdx === i);
+    }
+  });
+}
+
+/* ── 입장: 아래에서 올라와 촤라락 펼쳐짐 ─────────────── */
+function primeEntrance() {
+  folders.forEach((el, i) => {
+    el.style.transitionDelay = `${i * cssNum("--stagger", 55)}ms`;
+    el.style.transform = `translateY(${86 + i * 0.6}vh)`;
+  });
+}
+function finishEntrance() {
+  if (entered) return;
+  entered = true;
+  layout();
+  const total = folders.length * cssNum("--stagger", 55) + 820;
+  window.setTimeout(() => folders.forEach((el) => { el.style.transitionDelay = ""; }), total);
+}
+function playEntrance() {
+  requestAnimationFrame(() => requestAnimationFrame(finishEntrance));
+  // rAF가 억제되는 환경(백그라운드 탭)에서도 UI가 잠기지 않도록
+  window.setTimeout(finishEntrance, 700);
+}
+
+function toggle(i) {
+  if (!entered) return;
+  openIdx = openIdx === i ? null : i;
+  layout();
+}
+
+folders.forEach((el, i) => {
+  el.addEventListener("click", (e) => {
+    if (e.target.closest(".row")) return;
+    if (mode === "closed") { mode = "open"; openIdx = i; layout(); return; }
+    toggle(i);
+  });
+  // 접힘 상태에서 탭을 직접 눌러 그 피쳐를 펼친다
+  el.querySelector(".tab").addEventListener("click", (e) => {
+    e.stopPropagation();
+    mode = "open"; openIdx = i; layout();
+  });
+});
+
+// 스택 밖(배경) 클릭 → 전체 접기
+document.querySelector(".stage").addEventListener("click", (e) => {
+  if (e.target.closest(".stack") || !entered) return;
+  mode = "closed"; openIdx = null; layout();
+});
+
+stack.addEventListener("click", (e) => {
+  const row = e.target.closest(".row");
+  if (!row) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const key = row.dataset.add;
+  if (vaultSet.has(key)) vaultSet.delete(key); else vaultSet.add(key);
+  const add = row.querySelector(".rowAdd");
+  const held = vaultSet.has(key);
+  add.textContent = held ? "✓ SAVED" : "+ VAULT";
+  add.style.opacity = held ? "1" : "";
+  row.querySelector(".rowName").style.color = held ? "var(--ink)" : "";
+  document.getElementById("vaultNum").textContent = vaultSet.size;
+  document.getElementById("vault").classList.toggle("has", vaultSet.size > 0);
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (document.getElementById("backdrop").classList.contains("on")) closeModal();
+    else if (openIdx !== null) { openIdx = null; layout(); }
+    else { mode = mode === "closed" ? "open" : "closed"; layout(); }
+  }
+});
+
+primeEntrance();
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(playEntrance);
+  window.setTimeout(() => { if (!entered) playEntrance(); }, 1200);
+} else playEntrance();
+
+
+/* ══ 폴더 밖: Hit me 4타 + 드립 + 링크 추가 (사이트 동일) ══ */
+const FILL_STEPS = [0.29, 0.53, 0.79, 1];
+const STEP_JITTER = 0.04;
+const DRIP_MS = 1600;
+
+const hitBtn = document.getElementById("hitBtn");
+const hitStage = document.getElementById("hitStage");
+const fillLayer = document.getElementById("hitFillLayer");
+let hits = 0, dripping = false;
+
+// 드립이 "m" 아래에서 떨어지도록 실제 글자 위치를 측정
+function measureDripLeft() {
+  const p = document.getElementById("hitFillText");
+  const label = p.textContent;
+  const idx = label.indexOf("m");
+  const range = document.createRange();
+  const node = p.firstChild;
+  range.setStart(node, idx);
+  range.setEnd(node, idx + 1);
+  const r = range.getBoundingClientRect();
+  const s = hitStage.getBoundingClientRect();
+  return r.left - s.left + r.width / 2;
+}
+
+hitBtn.addEventListener("click", () => {
+  if (dripping) return;
+  hits = Math.min(FILL_STEPS.length, hits + 1);
+  const isFinal = hits >= FILL_STEPS.length;
+  const base = FILL_STEPS[hits - 1];
+  const p = isFinal ? 1 : Math.min(0.95, base + (Math.random() * 2 - 1) * STEP_JITTER);
+  fillLayer.style.clipPath = `inset(${(1 - p) * 100}% 0 0 0)`;
+
+  // 스쿼시 — 사이트와 같은 위상
+  hitStage.animate(
+    [
+      { transform: "scale(1,1)" }, { transform: "scale(1.22,0.6)" },
+      { transform: "scale(0.86,1.14)" }, { transform: "scale(1.04,0.96)" },
+      { transform: "scale(1,1)" },
+    ],
+    { duration: 420, easing: "ease-in-out" }
+  );
+
+  if (isFinal) {
+    dripping = true;
+    const drip = document.createElement("div");
+    drip.className = "dripLayer";
+    const trail = document.createElement("span");
+    trail.className = "dripTrail";
+    trail.style.left = `${measureDripLeft()}px`;
+    drip.appendChild(trail);
+    hitStage.appendChild(drip);
+    window.setTimeout(() => { openModal(); drip.remove(); }, DRIP_MS);
+  }
+});
+
+function resetHit() {
+  hits = 0; dripping = false;
+  fillLayer.style.clipPath = "inset(100% 0 0 0)";
+}
+
+const backdrop = document.getElementById("backdrop");
+const panel = document.getElementById("panel");
+
+function openModal() { renderInput(); backdrop.classList.add("on"); }
+function closeModal() { backdrop.classList.remove("on"); panel.innerHTML = ""; resetHit(); }
+
+backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+
+function renderInput() {
+  panel.innerHTML = `
+    <input type="url" class="field fieldDim" id="urlField" placeholder="Plz input urls.." autocomplete="off" />
+    <button type="button" class="submitBtn" id="submitBtn">SUBMIT</button>`;
+  const field = document.getElementById("urlField");
+  const btn = document.getElementById("submitBtn");
+  let valid = true;
+
+  field.addEventListener("input", () => {
+    valid = field.validity.valid;
+    const has = field.value.trim().length > 0;
+    field.classList.toggle("fieldDim", !has);
+    btn.classList.toggle("active", has);
+    const err = panel.querySelector(".errorText");
+    if (err) err.remove();
+  });
+
+  const submit = () => {
+    const url = field.value.trim();
+    if (!url) return;
+    if (!valid) {
+      if (!panel.querySelector(".errorText")) {
+        const p = document.createElement("p");
+        p.className = "errorText";
+        p.textContent = "X Not a link address type";
+        panel.insertBefore(p, btn);
+      }
+      return;
+    }
+    renderLoading();
+    window.setTimeout(renderDone, 1200);
+  };
+  btn.addEventListener("click", submit);
+  field.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  field.focus();
+}
+
+function renderLoading() {
+  panel.innerHTML = `<p class="stateMsg" id="loadMsg">I&rsquo;m checking it ..</p>`;
+  const el = document.getElementById("loadMsg");
+  let on = false;
+  const id = window.setInterval(() => {
+    on = !on;
+    el.textContent = on ? "I’m checking it ..." : "I’m checking it ..";
+  }, 450);
+  panel.dataset.timer = id;
+}
+
+function renderDone() {
+  window.clearInterval(Number(panel.dataset.timer));
+  panel.innerHTML = `
+    <p class="stateMsg">Done complete!</p>
+    <p class="stateSub">Registration may take a few hours or a few days.</p>`;
+  window.setTimeout(closeModal, 2400);
+}
+</script>
+</body>
+</html>

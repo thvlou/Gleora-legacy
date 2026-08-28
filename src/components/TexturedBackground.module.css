@@ -1,0 +1,133 @@
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #b2b2b2;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  width: 65vmax;
+  height: 65vmax;
+  border-radius: 50%;
+  filter: blur(70px);
+  will-change: transform;
+}
+
+.blobWhite {
+  top: -15%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 70%);
+  animation: refvault-drift-a 26s ease-in-out infinite;
+}
+
+.blobBlack {
+  right: -15%;
+  bottom: -20%;
+  background: radial-gradient(circle, rgba(20, 20, 20, 0.65) 0%, rgba(20, 20, 20, 0) 70%);
+  animation: refvault-drift-b 32s ease-in-out infinite;
+}
+
+.blobBlack2 {
+  top: 20%;
+  left: 45%;
+  width: 50vmax;
+  height: 50vmax;
+  background: radial-gradient(circle, rgba(58, 58, 58, 0.5) 0%, rgba(58, 58, 58, 0) 70%);
+  animation: refvault-drift-c 38s ease-in-out infinite;
+}
+
+.blobWhite2 {
+  bottom: -10%;
+  left: 10%;
+  width: 45vmax;
+  height: 45vmax;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 70%);
+  animation: refvault-drift-d 30s ease-in-out infinite;
+}
+
+/* 서로 다른 시작 위치·주기·이동 방향을 줘서 블롭들이 기계적으로 같이 움직이지
+   않고 각자 따로 살아 움직이는 것처럼 겹쳐 보이게 한다. 단순히 원점↔한 지점을
+   왕복하면 한쪽 방향으로만 움직이는 느낌이 나서, 중간 경유점을 여러 개 둬서
+   매번 다른 방향으로 꺾어 더 넓은 범위를 자유롭게 도는 경로로 만들었다. */
+@keyframes refvault-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20vw, 16vh) scale(1.2);
+  }
+  50% {
+    transform: translate(6vw, 30vh) scale(1.05);
+  }
+  75% {
+    transform: translate(-14vw, 14vh) scale(0.92);
+  }
+}
+
+@keyframes refvault-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-26vw, -20vh) scale(1.18);
+  }
+  50% {
+    transform: translate(-8vw, -36vh) scale(0.92);
+  }
+  75% {
+    transform: translate(16vw, -12vh) scale(1.1);
+  }
+}
+
+@keyframes refvault-drift-c {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(0.95);
+  }
+  25% {
+    transform: translate(-24vw, 16vh) scale(1.12);
+  }
+  50% {
+    transform: translate(4vw, 28vh) scale(0.88);
+  }
+  75% {
+    transform: translate(22vw, -8vh) scale(1.06);
+  }
+}
+
+@keyframes refvault-drift-d {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(16vw, -20vh) scale(0.86);
+  }
+  50% {
+    transform: translate(28vw, -4vh) scale(1.08);
+  }
+  75% {
+    transform: translate(6vw, 12vh) scale(0.94);
+  }
+}
+
+/* 필름 그레인 텍스처. SVG feTurbulence 로 노이즈를 만들어 data URI 로
+   내장하면 별도 이미지 파일 없이, 어떤 화면 크기에도 자동으로 반복(tile)되는
+   반응형 텍스처가 된다. */
+.grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
+}

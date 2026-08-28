@@ -1,0 +1,76 @@
+.root {
+  position: relative;
+  display: block;
+  padding: 12px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.punchStage {
+  position: relative;
+  display: inline-block;
+}
+
+.label {
+  margin: 0;
+  white-space: pre;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 평소 상태 — 사이트 전체가 쓰는 dim 회색(HoverImageReveal dimColor와 동일). */
+.baseText {
+  color: #8a8a8a;
+}
+
+/* 때린 만큼 아래에서부터 차오르는 옐로 레이어. 회색 원본 위에 정확히 겹쳐두고
+   clip-path 로 아랫부분만 드러내서, 차오른 만큼만 포인트 컬러로 보이게 한다. */
+.fillOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transition: clip-path 320ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.fillText {
+  color: #ffe345;
+}
+
+/* 다 채워지면 "m" 바로 아래에서 가는 줄기 하나가 주욱 흘러내린다.
+   키프레임을 여러 개 두면 CSS 는 이징을 "키프레임 구간마다" 새로 적용해서
+   구간이 바뀔 때마다 속도가 리셋돼 뚝뚝 끊겨 보인다(0/35/70/92% 로 나눠뒀을
+   때 3단계로 끊겨 내려오던 원인). 그래서 높이는 0% → 100% 단 하나의 구간으로
+   두고 이징을 한 번만 태워 끊김 없이 한 번에 흘러내리게 한다. */
+.dripLayer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  pointer-events: none;
+}
+
+.dripTrail {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 0;
+  background: #ffe345;
+  border-radius: 0 0 2px 2px;
+  transform: translateX(-50%);
+  animation: rv-drip-run 1.6s cubic-bezier(0.4, 0, 0.7, 0.35) forwards;
+}
+
+@keyframes rv-drip-run {
+  from {
+    height: 0;
+  }
+  to {
+    height: 54px;
+  }
+}

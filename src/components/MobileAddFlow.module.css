@@ -1,0 +1,45 @@
+/* 화면을 떠다니는 데스크탑 Hit me 버튼 대신, 구석에 고정된 단순한
+   트리거 — 탭 한 번으로 바로 입력 카드가 열린다. 색·폰트는 데스크탑과
+   동일한 값. */
+.trigger {
+  position: fixed;
+  right: 20px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 10;
+  padding: 12px 20px;
+  border: none;
+  margin: 0;
+  background: transparent;
+  color: #ffe345;
+  font-family: "PP Palma Fizzy Heavy", "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 0.9em;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.trigger:active {
+  opacity: 0.6;
+}
+
+/* AddFlow.module.css 의 backdrop/fullscreenConfetti 와 같은 값 — 데스크탑과
+   똑같은 딤/블러 배경, 똑같은 z-index 관계를 유지한다. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.fullscreenConfetti {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}

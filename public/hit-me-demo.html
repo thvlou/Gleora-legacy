@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>Hit me — 효과 후보 3안</title>
+<style>
+  @font-face {
+    font-family: "PP Palma Fizzy Heavy";
+    src: url("/fonts/PPPalma-FizzyHeavy.otf") format("opentype");
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #1c1c1c;
+    color: #ffe345;
+    font-family: "PP Palma Fizzy Heavy", "Arial Black", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 90px;
+    padding: 80px 20px;
+  }
+  .row { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .label { font-size: 14px; letter-spacing: 0.02em; color: #8a8a8a; }
+  .stage { position: relative; width: 260px; height: 160px; display: flex; align-items: center; justify-content: center; }
+
+  /* A. 펀치 임팩트 */
+  .punchBtn {
+    position: relative;
+    background: none;
+    border: none;
+    color: #ffe345;
+    font-family: inherit;
+    font-size: 34px;
+    cursor: pointer;
+    padding: 10px 22px;
+    z-index: 2;
+  }
+  .burst {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 6px;
+    height: 6px;
+    pointer-events: none;
+  }
+  .ray {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 60px;
+    background: #ffe345;
+    transform-origin: 50% 0%;
+    opacity: 0;
+  }
+  .punchBtn.hit { animation: squash 0.45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes squash {
+    0% { transform: scale(1,1); }
+    30% { transform: scale(1.25,0.55); }
+    55% { transform: scale(0.85,1.15); }
+    100% { transform: scale(1,1); }
+  }
+  .stage.shake { animation: shake 0.35s linear; }
+  @keyframes shake {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-4px,2px); }
+    40% { transform: translate(4px,-2px); }
+    60% { transform: translate(-3px,0px); }
+    80% { transform: translate(3px,1px); }
+  }
+  .ray.go { animation: rayOut 0.4s ease-out forwards; }
+  @keyframes rayOut {
+    0% { opacity: 1; transform: translate(-50%,0) scaleY(0.2); }
+    100% { opacity: 0; transform: translate(-50%,0) scaleY(1.3); }
+  }
+
+  /* B. 고무 도장 */
+  .stampBtn {
+    background: none;
+    border: 3px solid #ffe345;
+    color: #ffe345;
+    font-family: inherit;
+    font-size: 30px;
+    padding: 16px 30px;
+    cursor: pointer;
+    box-shadow: 7px 7px 0 #7a6a17;
+    transform: translate(0,0);
+    transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+  }
+  .stampBtn.pressed {
+    transform: translate(7px,7px);
+    box-shadow: 0 0 0 #7a6a17;
+  }
+  .stampBtn.release {
+    animation: stampBack 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes stampBack {
+    0% { transform: translate(7px,7px); box-shadow: 0 0 0 #7a6a17; }
+    60% { transform: translate(-2px,-2px); box-shadow: 9px 9px 0 #7a6a17; }
+    100% { transform: translate(0,0); box-shadow: 7px 7px 0 #7a6a17; }
+  }
+
+  /* C. 펀칭백 */
+  .bagWrap { position: relative; transform-origin: 50% 0%; }
+  .rope { width: 2px; height: 34px; background: #8a8a8a; margin: 0 auto; }
+  .bagBtn {
+    background: none;
+    border: none;
+    color: #ffe345;
+    font-family: inherit;
+    font-size: 30px;
+    cursor: pointer;
+    padding: 14px 26px;
+    border-radius: 60px 60px 50px 50px;
+    border: 3px solid #ffe345;
+  }
+  .bagWrap.swingL { animation: swingL 1.4s cubic-bezier(.36,.07,.19,.97); }
+  .bagWrap.swingR { animation: swingR 1.4s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes swingL {
+    0% { transform: rotate(0deg); }
+    12% { transform: rotate(-22deg); }
+    30% { transform: rotate(14deg); }
+    48% { transform: rotate(-8deg); }
+    66% { transform: rotate(4deg); }
+    84% { transform: rotate(-2deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes swingR {
+    0% { transform: rotate(0deg); }
+    12% { transform: rotate(22deg); }
+    30% { transform: rotate(-14deg); }
+    48% { transform: rotate(8deg); }
+    66% { transform: rotate(-4deg); }
+    84% { transform: rotate(2deg); }
+    100% { transform: rotate(0deg); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="row">
+    <span class="label">A. 펀치 임팩트 — 찌그러졌다 튕겨나오며 만화식 충격선</span>
+    <div class="stage" id="stageA">
+      <button class="punchBtn" id="punchBtn">HIT ME !</button>
+      <div class="burst" id="burst"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="label">B. 고무 도장 — 두꺼운 그림자 속으로 눌려 들어갔다 튕김</span>
+    <div class="stage">
+      <button class="stampBtn" id="stampBtn">HIT ME !</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="label">C. 펀칭백 — 때린 방향으로 관성감 있게 흔들림</span>
+    <div class="stage">
+      <div class="bagWrap" id="bagWrap">
+        <div class="rope"></div>
+        <button class="bagBtn" id="bagBtn">HIT ME !</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const punchBtn = document.getElementById("punchBtn");
+  const stageA = document.getElementById("stageA");
+  const burst = document.getElementById("burst");
+  const RAY_COUNT = 8;
+  for (let i = 0; i < RAY_COUNT; i++) {
+    const ray = document.createElement("div");
+    ray.className = "ray";
+    ray.style.transform = `translate(-50%,0) rotate(${(360 / RAY_COUNT) * i}deg)`;
+    burst.appendChild(ray);
+  }
+  punchBtn.addEventListener("click", () => {
+    punchBtn.classList.remove("hit");
+    stageA.classList.remove("shake");
+    void punchBtn.offsetWidth;
+    punchBtn.classList.add("hit");
+    stageA.classList.add("shake");
+    burst.querySelectorAll(".ray").forEach((r) => {
+      r.classList.remove("go");
+      void r.offsetWidth;
+      r.classList.add("go");
+    });
+  });
+
+  const stampBtn = document.getElementById("stampBtn");
+  stampBtn.addEventListener("mousedown", () => {
+    stampBtn.classList.remove("release");
+    stampBtn.classList.add("pressed");
+  });
+  stampBtn.addEventListener("mouseup", () => {
+    stampBtn.classList.remove("pressed");
+    stampBtn.classList.add("release");
+  });
+  stampBtn.addEventListener("mouseleave", () => {
+    stampBtn.classList.remove("pressed");
+  });
+
+  const bagWrap = document.getElementById("bagWrap");
+  const bagBtn = document.getElementById("bagBtn");
+  bagBtn.addEventListener("click", (e) => {
+    const rect = bagBtn.getBoundingClientRect();
+    const hitLeft = e.clientX - rect.left < rect.width / 2;
+    bagWrap.classList.remove("swingL", "swingR");
+    void bagWrap.offsetWidth;
+    bagWrap.classList.add(hitLeft ? "swingR" : "swingL");
+  });
+</script>
+</body>
+</html>

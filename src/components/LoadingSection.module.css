@@ -1,0 +1,61 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  /* 560px 고정폭은 데스크탑 기준 — InputSection과 같은 방식(비율 유지
+     + vw 클램프)으로 좁은 화면에서도 넘치지 않게 한다. */
+  width: min(560px, 88vw);
+  aspect-ratio: 560 / 290;
+  box-sizing: border-box;
+  padding: 3.57%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+}
+
+.eyes {
+  display: flex;
+  align-items: center;
+  gap: clamp(30px, 15.87vw, 101px);
+}
+
+.eye {
+  display: block;
+  width: clamp(40px, 11.31vw, 72px);
+  height: clamp(40px, 11.31vw, 72px);
+}
+
+.eye svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* CSS Modules는 @keyframes 이름도 파일별로 스코프(해시)하므로, 참조하는
+   .eyeLeft/.eyeRight와 같은 파일에 정의해야 한다(전역 CSS의 이름을 그냥
+   문자열로 적으면 매칭되는 로컬 키프레임이 없어 아예 재생되지 않는다). */
+@keyframes rv-eye-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.eyeLeft {
+  animation: rv-eye-spin 3.2s linear infinite;
+}
+
+.eyeRight {
+  animation: rv-eye-spin 3.6s linear infinite reverse;
+}
+
+.text {
+  margin: 0;
+  font-family: "PP Palma Fizzy Heavy", sans-serif;
+  font-size: clamp(20px, 5.657vw, 36px);
+  color: #ffe345;
+  white-space: nowrap;
+}

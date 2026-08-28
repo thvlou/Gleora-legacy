@@ -1,0 +1,193 @@
+export type Ref = {
+  name: string; // 화면에 뜨는 큰 텍스트
+  url: string; // 클릭 시 이동
+  note: string; // 한 줄 설명
+  tint: [string, string]; // SVG 커버 그라디언트 색 2개
+  cover?: string; // 나중에 실제 이미지를 넣을 자리. 지금은 비워둔다
+  taglineEmphasis?: string; // 호버 시 로고 아래 크게 강조되는 핵심 표현(영문)
+};
+
+export const REFS: Ref[] = [
+  {
+    name: "BEHANCE",
+    url: "https://www.behance.net",
+    note: "포트폴리오 전량. 그래픽·브랜딩 물량이 압도적이라 스타일 탐색용",
+    tint: ["#1769FF", "#53A7FF"],
+    taglineEmphasis: "portfolio inspiration",
+  },
+  {
+    name: "MOBBIN",
+    url: "https://mobbin.com",
+    note: "실제 앱 화면을 플로우 단위로 모아둔 곳. UI 패턴 근거 찾을 때 1순위",
+    tint: ["#7C3AED", "#EC4899"],
+    taglineEmphasis: "UI flows",
+  },
+  {
+    name: "DRIBBBLE",
+    url: "https://dribbble.com",
+    note: "컨셉 위주. 실현 가능성보다 비주얼 감각 충전용",
+    tint: ["#EA4C89", "#F582AE"],
+    taglineEmphasis: "visual inspiration",
+  },
+  {
+    name: "AWWWARDS",
+    url: "https://www.awwwards.com",
+    note: "웹 인터랙션의 상한선. 모션·전환 레퍼런스가 필요할 때",
+    tint: ["#FFC900", "#FF6B35"],
+    taglineEmphasis: "motion excellence",
+  },
+  {
+    name: "LAND-BOOK",
+    url: "https://land-book.com",
+    note: "랜딩페이지만 모은 갤러리. 섹션 구성과 카피 길이 참고",
+    tint: ["#3A86FF", "#8338EC"],
+    taglineEmphasis: "landing pages",
+  },
+  {
+    name: "GODLY",
+    url: "https://godly.website",
+    note: "실험적인 웹만 큐레이션. 유행의 최전선이라 절제해서 참고",
+    tint: ["#9D4EDD", "#39FF14"],
+    taglineEmphasis: "experimental web",
+  },
+  {
+    name: "REFERO",
+    url: "https://refero.design",
+    note: "실제 서비스의 화면·플로우 캡처. 특정 화면 검색이 강점",
+    tint: ["#06B6D4", "#3B82F6"],
+    taglineEmphasis: "screen capture",
+  },
+  {
+    name: "SITEINSPIRE",
+    url: "https://www.siteinspire.com",
+    note: "스타일·타입별 필터가 정교하다. 타이포 중심 사이트 찾을 때",
+    tint: ["#4361EE", "#4CC9F0"],
+    taglineEmphasis: "typographic design",
+  },
+  {
+    name: "NOTEFOLIO",
+    url: "https://notefolio.net",
+    note: "국내 디자이너 포트폴리오. 한글 타이포 처리 사례",
+    tint: ["#FF6B6B", "#FFD93D"],
+    taglineEmphasis: "hangul typography",
+  },
+  {
+    name: "NOONNU",
+    url: "https://noonnu.cc",
+    note: "한글 무료 폰트. 라이선스 범위가 정리돼 있어 상업 사용 판단이 빠르다",
+    tint: ["#FF9F1C", "#E71D36"],
+    taglineEmphasis: "free korean fonts",
+  },
+  {
+    name: "CALL TO INSPIRATION",
+    url: "https://calltoinspiration.com/",
+    note: "UI 디테일 패턴 모음. 마이크로 인터랙션 디테일 참고",
+    tint: ["#00C2A8", "#00E0C0"],
+    taglineEmphasis: "ui detail patterns",
+  },
+  {
+    name: "CONTRA",
+    url: "https://contra.com/?view=projects",
+    note: "프리랜서 크리에이티브 프로젝트 쇼케이스. 실무형 포트폴리오 참고",
+    tint: ["#FF5A5F", "#FFB199"],
+    taglineEmphasis: "creative projects",
+  },
+  {
+    name: "COLLECTUI",
+    url: "https://collectui.com/",
+    note: "매일 업데이트되는 UI 컴포넌트 영감 모음",
+    tint: ["#6C5CE7", "#A29BFE"],
+    taglineEmphasis: "daily ui inspiration",
+  },
+  {
+    name: "NAME THAT UI",
+    url: "https://namethatui.com/?platform=web",
+    note: "UI 패턴 이름과 사례를 정리한 사전형 사이트",
+    tint: ["#0984E3", "#74B9FF"],
+    taglineEmphasis: "ui pattern dictionary",
+  },
+  {
+    name: "WWIT",
+    url: "https://wwit.design/",
+    note: "국내 서비스의 UI 패턴 아카이브",
+    tint: ["#E17055", "#FAB1A0"],
+    taglineEmphasis: "korean ui patterns",
+  },
+  {
+    name: "CURATED",
+    url: "https://www.curated.supply/",
+    note: "디자인 중심 제품 큐레이션 커머스",
+    tint: ["#00B894", "#55EFC4"],
+    taglineEmphasis: "design-led products",
+  },
+  {
+    name: "DESIGNUS",
+    url: "https://ko.designus.design/",
+    note: "모바일 UI 컴포넌트·패턴 라이브러리",
+    tint: ["#D63031", "#FF7675"],
+    taglineEmphasis: "mobile ui library",
+  },
+  {
+    name: "DISQUIET",
+    url: "https://disquiet.io/",
+    note: "메이커·프로덕트 빌더 커뮤니티. 실행 사례 공유",
+    tint: ["#2D3436", "#636E72"],
+    taglineEmphasis: "maker community",
+  },
+  {
+    name: "FIGMA COMMUNITY",
+    url: "https://www.figma.com/community",
+    note: "커뮤니티가 공유하는 디자인 리소스·템플릿 허브",
+    tint: ["#1ABC9C", "#16A085"],
+    taglineEmphasis: "community resources",
+  },
+  {
+    name: "TEXT CRYSTLIZER",
+    url: "https://text-crystlizer.netlify.app/",
+    note: "텍스트를 결정체처럼 굴절시키는 실험적 타이포그래피 제너레이터",
+    tint: ["#7DF9FF", "#B983FF"],
+    taglineEmphasis: "crystal typography generator",
+  },
+  {
+    name: "GLENN CATTEEUW",
+    url: "https://glenncatteeuw.com/404?via=404sdesign",
+    note: "404 페이지 자체를 인터랙티브 경험으로 만든 개인 포트폴리오 사례",
+    tint: ["#FF3CAC", "#784BA0"],
+    taglineEmphasis: "interactive 404 experience",
+  },
+  {
+    name: "IT'S NICE THAT",
+    url: "https://www.itsnicethat.com/",
+    note: "디자인·일러스트·포토를 다루는 크리에이티브 컬처 에디토리얼 매체",
+    tint: ["#2C3E50", "#4CA1AF"],
+    taglineEmphasis: "creative culture editorial",
+  },
+  {
+    name: "WIKI SPY",
+    url: "https://neal.fun/wiki-spy/",
+    note: "위키피디아 사진 속 사물을 찾아내는 비주얼 탐색 미니게임",
+    tint: ["#11998E", "#38EF7D"],
+    taglineEmphasis: "visual object discovery",
+  },
+  {
+    name: "TOOOOOOLS",
+    url: "https://www.tooooools.app/",
+    note: "이미지에 로파이 필터·글리치 효과를 입히는 웹 툴",
+    tint: ["#C9A66B", "#7B6D8D"],
+    taglineEmphasis: "lo-fi image effects",
+  },
+  {
+    name: "ANOTHER GRAPHIC",
+    url: "https://anothergraphic.org/",
+    note: "타이포그래피 중심의 그래픽 디자인 아카이브",
+    tint: ["#232526", "#8E9EAB"],
+    taglineEmphasis: "typographic design archive",
+  },
+  {
+    name: "SPACE TYPE GENERATOR",
+    url: "https://spacetypegenerator.com/",
+    note: "우주적 무드의 키네틱 타입 제너레이터",
+    tint: ["#4E54C8", "#8F94FB"],
+    taglineEmphasis: "kinetic type generator",
+  },
+];

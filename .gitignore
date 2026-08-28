@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.vercel
+.env*
+
+# Freesources 에서 수집한 시드 데이터 (533건).
+# 이 저장소는 공개(public)이므로, 타 사이트의 큐레이션 데이터셋을 그대로
+# 재배포하는 형태가 되지 않도록 추적에서 제외한다. 로컬 작업용으로만 둔다.
+data-seed-links.txt
+data-seed-metadata.tsv
+
+# 컨테이너/로컬 환경 부산물 — 프로젝트 파일이 아님
+.apt/
+.cache/
+.config/
+.local/
+.npm/
+.pw-tmp/
+.claude/
+.claude.json
+.bashrc
+.vibe-initialized

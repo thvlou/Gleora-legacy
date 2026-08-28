@@ -1,0 +1,21 @@
+.root {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+  flex-shrink: 0;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* URL 입력 전(빈 값)엔 텍스트 필드 플레이스홀더와 같은 60% 오퍼시티. */
+.inactive {
+  opacity: 0.6;
+}
+
+.svgWrap {
+  display: block;
+}

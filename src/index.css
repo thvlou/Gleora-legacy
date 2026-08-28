@@ -1,0 +1,73 @@
+@font-face {
+  font-family: "PP Palma Fizzy Heavy";
+  src: url("/fonts/PPPalma-FizzyHeavy.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PP Palma Fizzy Light";
+  src: url("/fonts/PPPalma-FizzyLight.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fizzy(손그림) 계열이 아닌 일반 PP Palma Medium — 작은 상태/에러 문구용.
+   Fizzy Heavy는 굵고 개성 있는 로고/버튼용이라 12px 이하로 줄이면 wobble이
+   지저분해 보여서, 작은 텍스트엔 이 담백한 굵기를 쓴다. */
+@font-face {
+  font-family: "PP Palma Medium";
+  src: url("/fonts/PPPalma-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Done 화면의 작은 안내 문구(이탤릭)용 — Figma에서 "PP Palma Fizzy Medium
+   Italic"으로 지정된 그대로. */
+@font-face {
+  font-family: "PP Palma Fizzy Medium Italic";
+  src: url("/fonts/PPPalma-FizzyMediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* 로고 텍스트 압출(3D) 360도 회전 — HoverImageReveal 의 텍스트 로고에서 사용.
+   전역 스타일시트에 둔 이유는 CSS Modules 가 @keyframes 이름도 해시로
+   스코프하기 때문에, 컴포넌트 인라인 style 에서 이름으로 직접 참조하려면
+   여기(비-모듈 전역 CSS)에 있어야 한다.
+
+   예전엔 압출 레이어의 제일 뒤(단색) 레이어가 앞면을 덮어버리는 버그 때문에
+   90도 이내로만 왕복시켰는데, 그 버그의 진짜 원인은 preserve-3d 깊이 정렬을
+   지원하지 않는 환경에서 z-index 없이 DOM 순서로 쌓이는 것이었다. 앞면에
+   z-index 를 명시해 해결했으므로(HoverImageReveal.tsx) 다시 0~360도 완주로
+   되돌린다. */
+@keyframes refvault-spin3d {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #b2b2b2;
+  color: #ffe345;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Folder UI — Coverflow Preview</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@800&family=Bebas+Neue&family=Cormorant+Garamond:wght@400&family=Instrument+Serif&family=Inter:wght@800&family=JetBrains+Mono:wght@700&family=Space+Grotesk:wght@700&family=Space+Mono:wght@700&display=swap"
+  rel="stylesheet" />
+
+<style>
+  @font-face {
+    font-family: "PP Palma Fizzy Heavy";
+    src: url("/fonts/PPPalma-FizzyHeavy.otf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "PP Palma Medium";
+    src: url("/fonts/PPPalma-Medium.otf") format("opentype");
+    font-display: swap;
+  }
+
+  :root {
+    /* 폴더 밖 — 사이트 3색 언어 */
+    --dim: #8a8a8a;
+    --point: #ffe345;
+    --danger: #ff3b30;
+    --side-margin: 100px;
+
+    /* 로고 팔레트 — 사용자 제공 9색 (선형 그라데이션 소스) */
+    --p1: #33afc2;  /* cyan   */
+    --p2: #d06cd9;  /* orchid */
+    --p3: #6be453;  /* green  */
+    --p4: #e48a46;  /* orange */
+    --p5: #abacb1;  /* gray   */
+    --p6: #e92727;  /* red    */
+    --p7: #ebd546;  /* yellow */
+    --p8: #000000;  /* black  */
+    --p9: #bababa;  /* silver */
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: #0a0a0a;      /* 다크 — Figma 컴포넌트가 설계된 환경 */
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ══ 로고 — Figma node 10699:1574 벡터 내보내기 ════════
+     Neo Zine 은 이 PC 에 미설치라 텍스트로는 절대 재현 불가
+     (각 글자가 색 블록 안에 들어간 장식 서체).
+     Figma 에서 SVG 로 내보내 글자를 패스로 고정했다 —
+     서체·자간·9색 그라디언트(alpha 0.4)가 컴포넌트와 동일.
+     배경 rect 와 아트보드 잔재만 제거했다.
+     크기는 Hit me 버튼과 동일한 시각 높이(27px)에 맞춤. */
+  .logo {
+    position: fixed;
+    top: 44px;   /* Hit me 라벨과 같은 광학 기준선 (버튼 padding 10px 보정) */
+    left: var(--side-margin);
+    z-index: 70;
+    margin: 0;
+    display: block;
+    height: 27px;          /* Hit me: 30px * line-height 0.9 = 27px */
+    width: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* ══ 코버플로 — Originkit rootStyle 그대로 ══════════════ */
+  .cfRoot {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 320px;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1600px;        /* PERSPECTIVE */
+    overflow: hidden;
+    outline: none;
+  }
+  .cfTrack { position: relative; transform-style: preserve-3d; }
+
+  .cfCard {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transform-origin: center center;
+    background-color: #1a1a1a;  /* 원본 cardStyle 값 유지 */
+    /* 다크 배경에서 카드 경계를 세우는 얇은 림 — 애니메이션 값 아님 */
+    box-shadow: 0 26px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  /* 이미지 자리 — 피쳐별 다스톱 그라디언트 (무드) */
+  .cfFill { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* 광택 — 카드 재질감. 전 카드 공통 */
+  .cfSheen {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(130% 80% at 18% 6%, rgba(255,255,255,0.26), transparent 58%),
+      radial-gradient(90% 60% at 88% 96%, rgba(0,0,0,0.20), transparent 62%);
+  }
+
+  /* 그레인 — 색면이 매끈하게 죽지 않도록 아주 얇게 */
+  .cfGrain {
+    position: absolute; inset: 0; pointer-events: none;
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+  }
+
+  /* 가독성 그라디언트 — 원본 bottomLeft 기준 */
+  .cfGrad {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+  }
+
+  /* 타이틀 — 원본 titlePosition bottomLeft / padding 22·22·24 */
+  .cfTitleBox {
+    position: absolute;
+    left: 22px; right: 22px; bottom: 24px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .cfTitle {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1em;
+    letter-spacing: -0.02em;
+    white-space: pre-line;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  .cfDim { position: absolute; inset: 0; background: #000000; pointer-events: none; }
+
+  /* ══ 폴더 밖 — 기존 3색 언어 ═══════════════════════════ */
+  .hitWrap { position: fixed; top: 34px; right: var(--side-margin); z-index: 70; }
+  .hitBtn {
+    position: relative; display: block; padding: 10px 4px;
+    border: none; margin: 0; background: transparent; cursor: pointer; line-height: 1;
+  }
+  .hitStage { position: relative; display: inline-block; }
+  .hitLabel {
+    margin: 0;
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 30px; line-height: 0.9em; letter-spacing: -0.02em;
+    white-space: pre; user-select: none;
+  }
+  .hitBase { color: var(--dim); }
+  .hitFillLayer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    transition: clip-path 320ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+  .hitFill { color: var(--point); }
+  .dripLayer { position: absolute; left: 0; right: 0; top: 100%; pointer-events: none; }
+  .dripTrail {
+    position: absolute; top: -5px; width: 4px; height: 0;
+    background: var(--point); border-radius: 0 0 2px 2px;
+    transform: translateX(-50%);
+    animation: rv-drip 1.6s cubic-bezier(0.4, 0, 0.7, 0.35) forwards;
+  }
+  @keyframes rv-drip { from { height: 0; } to { height: 54px; } }
+
+  .backdrop {
+    position: fixed; inset: 0; z-index: 80;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .backdrop.on { display: flex; }
+  .panel {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 26px;
+    width: min(520px, 84vw); padding: 30px;
+    background: rgba(0,0,0,0.34); border-radius: 30px;
+  }
+  .field {
+    width: 100%; padding: 16px 20px;
+    border: 2.5px solid var(--point); border-radius: 14px;
+    background: transparent; outline: none;
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 24px; color: var(--point);
+  }
+  .field::placeholder { color: var(--point); opacity: 0.55; }
+  .fieldDim { border-color: rgba(255,227,69,0.55); }
+  .errorText {
+    align-self: flex-start; margin: -18px 0 0;
+    font-family: "PP Palma Medium", sans-serif; font-size: 12px; color: var(--danger);
+  }
+  .submitBtn {
+    padding: 11px 30px; border: 2.5px solid var(--point); border-radius: 999px;
+    background: transparent; color: var(--point);
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 17px; letter-spacing: 0.05em;
+    cursor: pointer; opacity: 0.55; transition: opacity 200ms ease;
+  }
+  .submitBtn.active { opacity: 1; }
+  .stateMsg {
+    width: 100%; text-align: center; padding: 26px 0 10px;
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 30px; color: var(--point);
+  }
+  .stateSub {
+    width: 100%; text-align: center;
+    font-family: "PP Palma Medium", sans-serif; font-size: 11px; color: var(--point); opacity: 0.75;
+  }
+</style>
+</head>
+<body>
+
+<img class="logo" id="logo" src="/gleora-logo.svg" alt="Gleora" />
+
+<div class="hitWrap">
+  <button class="hitBtn" id="hitBtn" aria-label="Hit me !">
+    <span class="hitStage" id="hitStage">
+      <p class="hitLabel hitBase">Hit me !</p>
+      <span class="hitFillLayer" id="hitFillLayer" style="clip-path: inset(100% 0 0 0)">
+        <p class="hitLabel hitFill" id="hitFillText">Hit me !</p>
+      </span>
+    </span>
+  </button>
+</div>
+
+<div class="cfRoot" id="cfRoot" tabindex="0" role="group" aria-roledescription="carousel">
+  <div class="cfTrack" id="cfTrack"></div>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   Originkit "CoverflowGallery" (preset: custom-style) 이식.
+   인터랙션 로직과 애니메이션 값은 원본 그대로.
+   ────────────────────────────────────────────────────────── */
+const PERSPECTIVE = 1600;
+const SCALE_STEP  = 0.16;
+const MAX_VISIBLE = 2;
+const DEPTH       = 240;
+
+const PROPS = {
+  cardWidth: 500,
+  cardHeight: 400,
+  radius: 4,
+  tilt: 16,
+  sideTilt: 6,
+  gap: 10,
+  opacity: 60,
+  autoplay: false,
+  autoplayDirection: "rightToLeft",
+  transition: { type: "tween", duration: 0.8, delay: 2.5, ease: [0.22, 1, 0.36, 1] },
+  showTitle: true,
+  titleColor: "#ffffff",
+  titlePosition: { position: "bottomLeft", paddingLeft: 22, paddingRight: 22, paddingTop: 24, paddingBottom: 24 },
+};
+
+/* 피쳐별 카드 =  성격색 1개(로고 팔레트에서) + 그 색을 중심으로
+   4~7 스톱 그라디언트. 리터럴 아이콘 대신 색의 분위기로 성격을 말한다. */
+const FEATURES = [
+  {
+    key: "web", label: "WEB",
+    id: "#33AFC2",  // cyan — 화면빛
+    font: "'Space Grotesk', sans-serif",
+    grad: "linear-gradient(148deg, #7FE3F0 0%, #33AFC2 24%, #2C6FC9 52%, #2A3A9E 78%, #141A55 100%)",
+  },
+  {
+    key: "ui", label: "UI",
+    id: "#ABACB1",  // gray — 시스템·중립 (쿨 슬레이트로 전개)
+    font: "'Inter', sans-serif",
+    grad: "linear-gradient(148deg, #E2E5EA 0%, #ABACB1 26%, #7C8794 54%, #515B69 78%, #2F3742 100%)",
+  },
+  {
+    key: "graphic", label: "GRAPHIC",
+    id: "#E92727",  // red — 인쇄 잉크
+    font: "'Anton', sans-serif",
+    grad: "linear-gradient(148deg, #EBD546 0%, #E48A46 22%, #E92727 50%, #B3145E 76%, #5C1046 100%)",
+  },
+  {
+    key: "type", label: "TYPE",
+    id: "#000000",  // black — 잉크와 종이
+    font: "'Instrument Serif', serif",
+    grad: "linear-gradient(148deg, #F0E9DA 0%, #C0AC90 20%, #6E6151 46%, #2A2520 74%, #000000 100%)",
+  },
+  {
+    key: "motion", label: "MOTION",
+    id: "#D06CD9",  // orchid — 잔상·트레일
+    font: "'Bebas Neue', sans-serif",
+    grad: "linear-gradient(148deg, #F7B4EE 0%, #D06CD9 24%, #8B5CF6 52%, #4C1D95 78%, #1B0F42 100%)",
+  },
+  {
+    key: "photo", label: "PHOTO",
+    id: "#BABABA",  // silver — 은염 계조 (웜으로 전개)
+    font: "'Cormorant Garamond', serif",
+    grad: "linear-gradient(148deg, #EFEAE0 0%, #BABABA 24%, #9C9081 52%, #6A6053 78%, #332E27 100%)",
+  },
+  {
+    key: "color", label: "COLOR",
+    id: "#EBD546",  // yellow — 다만 카드는 팔레트 전 색을 순환
+    font: "'Baloo 2', system-ui, sans-serif",
+    grad: "linear-gradient(135deg, #E92727 0%, #E48A46 17%, #EBD546 34%, #6BE453 51%, #33AFC2 68%, #D06CD9 85%, #E92727 100%)",
+  },
+  {
+    key: "icon", label: "ICON",
+    id: "#6BE453",  // green — 기하·격자
+    font: "'Space Mono', monospace",
+    grad: "linear-gradient(148deg, #D2F8B4 0%, #6BE453 26%, #2AB673 54%, #10715C 78%, #06332F 100%)",
+  },
+  {
+    key: "code", label: "CODE",
+    id: "#E48A46",  // orange — 터미널
+    font: "'JetBrains Mono', monospace",
+    grad: "linear-gradient(148deg, #F5C08A 0%, #E48A46 24%, #A2542A 52%, #48291A 78%, #100C0A 100%)",
+  },
+];
+
+const GRAIN_URI = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">' +
+  '<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/></filter>' +
+  '<rect width="100%" height="100%" filter="url(#n)"/></svg>'
+);
+
+// 원본 cssTransition()
+function cssTransition(t) {
+  const d = t && typeof t.duration === "number" ? t.duration : 0.6;
+  let ez = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const e = t && t.ease;
+  if (Array.isArray(e) && e.length === 4) {
+    ez = `cubic-bezier(${e[0]}, ${e[1]}, ${e[2]}, ${e[3]})`;
+  } else if (typeof e === "string") {
+    const map = { linear: "linear", easeIn: "ease-in", easeOut: "ease-out", easeInOut: "ease-in-out" };
+    ez = map[e] || "ease";
+  }
+  return { dur: d, ease: ez };
+}
+
+const { dur, ease } = cssTransition(PROPS.transition);
+const transitionCss = `transform ${dur}s ${ease}, opacity ${dur}s ${ease}`;
+
+const effectiveRadius =
+  (Math.max(0, Math.min(20, PROPS.radius)) / 20) *
+  (Math.min(PROPS.cardWidth, PROPS.cardHeight) / 2);
+const dimAmount = 1 - Math.max(0, Math.min(100, PROPS.opacity)) / 100;
+
+const root = document.getElementById("cfRoot");
+const track = document.getElementById("cfTrack");
+const n = FEATURES.length;
+const loop = true;
+let active = 0;
+
+track.style.width = PROPS.cardWidth + "px";
+track.style.height = PROPS.cardHeight + "px";
+
+const cards = FEATURES.map((f, i) => {
+  const card = document.createElement("div");
+  card.className = "cfCard";
+  card.style.width = PROPS.cardWidth + "px";
+  card.style.height = PROPS.cardHeight + "px";
+  card.style.borderRadius = effectiveRadius + "px";
+  card.style.transition = transitionCss;
+  card.setAttribute("aria-label", f.label);
+
+  const fill = document.createElement("div");
+  fill.className = "cfFill";
+  fill.style.background = f.grad;
+
+  const sheen = document.createElement("div");
+  sheen.className = "cfSheen";
+
+  const grain = document.createElement("div");
+  grain.className = "cfGrain";
+  grain.style.backgroundImage = `url("${GRAIN_URI}")`;
+  grain.style.filter = "contrast(170%) brightness(130%)";
+
+  const grad = document.createElement("div");
+  grad.className = "cfGrad";
+
+  const titleBox = document.createElement("div");
+  titleBox.className = "cfTitleBox";
+  const title = document.createElement("span");
+  title.className = "cfTitle";
+  title.style.fontFamily = f.font;
+  title.textContent = f.label;
+  titleBox.appendChild(title);
+
+  const dimEl = document.createElement("div");
+  dimEl.className = "cfDim";
+  dimEl.style.transition = `opacity ${dur}s ${ease}`;
+
+  card.append(fill, sheen, grain, grad);
+  if (PROPS.showTitle) card.append(titleBox);
+  card.append(dimEl);
+
+  card.addEventListener("click", () => handleCardClick(i));
+  track.appendChild(card);
+  return { el: card, dimEl };
+});
+
+// 원본 map 내부 계산식 그대로
+function render() {
+  cards.forEach(({ el, dimEl }, i) => {
+    let rel = i - active;
+    if (loop) {
+      if (rel > n / 2) rel -= n;
+      if (rel < -n / 2) rel += n;
+    }
+    const ax = Math.abs(rel);
+    const visible = ax <= MAX_VISIBLE;
+    const isActive = rel === 0;
+    const sc = Math.max(0.4, 1 - ax * SCALE_STEP);
+    const tx = rel * (PROPS.gap * 30);
+    const tz = -ax * DEPTH;
+    const ry = -rel * PROPS.tilt;
+    const rz = rel * PROPS.sideTilt;
+
+    el.style.transform =
+      `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${sc})`;
+    el.style.opacity = visible ? 1 : 0;
+    el.style.cursor = PROPS.autoplay || isActive ? "default" : "pointer";
+    el.style.pointerEvents = visible && !PROPS.autoplay ? "auto" : "none";
+    dimEl.style.opacity = isActive ? 0 : dimAmount;
+  });
+}
+
+// 원본 lock / step / handleCardClick
+const moveDur =
+  PROPS.transition && typeof PROPS.transition.duration === "number" ? PROPS.transition.duration : 0.6;
+let locked = false;
+function lock() {
+  locked = true;
+  window.setTimeout(() => { locked = false; }, Math.max(50, moveDur * 1000));
+}
+function step(dir) {
+  if (locked) return;
+  lock();
+  active = (((active + dir) % n) + n) % n;
+  render();
+}
+function handleCardClick(i) {
+  if (PROPS.autoplay || locked) return;
+  lock();
+  active = i === active ? (active + 1) % n : i;
+  render();
+}
+
+root.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+});
+
+window.addEventListener("wheel", (e) => {
+  if (e.target instanceof Element && e.target.closest(".panel")) return;
+  e.preventDefault();
+  step(Math.sign(e.deltaY) || 1);
+}, { passive: false });
+
+render();
+root.focus();
+
+
+/* ══ 폴더 밖: Hit me 4타 + 드립 + 링크 추가 ══════════════ */
+const FILL_STEPS = [0.29, 0.53, 0.79, 1];
+const STEP_JITTER = 0.04;
+const DRIP_MS = 1600;
+
+const hitBtn = document.getElementById("hitBtn");
+const hitStage = document.getElementById("hitStage");
+const fillLayer = document.getElementById("hitFillLayer");
+let hits = 0, dripping = false;
+
+function measureDripLeft() {
+  const p = document.getElementById("hitFillText");
+  const idx = p.textContent.indexOf("m");
+  const range = document.createRange();
+  range.setStart(p.firstChild, idx);
+  range.setEnd(p.firstChild, idx + 1);
+  const r = range.getBoundingClientRect();
+  const s = hitStage.getBoundingClientRect();
+  return r.left - s.left + r.width / 2;
+}
+
+hitBtn.addEventListener("click", () => {
+  if (dripping) return;
+  hits = Math.min(FILL_STEPS.length, hits + 1);
+  const isFinal = hits >= FILL_STEPS.length;
+  const base = FILL_STEPS[hits - 1];
+  const p = isFinal ? 1 : Math.min(0.95, base + (Math.random() * 2 - 1) * STEP_JITTER);
+  fillLayer.style.clipPath = `inset(${(1 - p) * 100}% 0 0 0)`;
+
+  hitStage.animate(
+    [
+      { transform: "scale(1,1)" }, { transform: "scale(1.22,0.6)" },
+      { transform: "scale(0.86,1.14)" }, { transform: "scale(1.04,0.96)" },
+      { transform: "scale(1,1)" },
+    ],
+    { duration: 420, easing: "ease-in-out" }
+  );
+
+  if (isFinal) {
+    dripping = true;
+    const drip = document.createElement("div");
+    drip.className = "dripLayer";
+    const trail = document.createElement("span");
+    trail.className = "dripTrail";
+    trail.style.left = `${measureDripLeft()}px`;
+    drip.appendChild(trail);
+    hitStage.appendChild(drip);
+    window.setTimeout(() => { openModal(); drip.remove(); }, DRIP_MS);
+  }
+});
+
+function resetHit() { hits = 0; dripping = false; fillLayer.style.clipPath = "inset(100% 0 0 0)"; }
+
+const backdrop = document.getElementById("backdrop");
+const panel = document.getElementById("panel");
+function openModal() { renderInput(); backdrop.classList.add("on"); }
+function closeModal() { backdrop.classList.remove("on"); panel.innerHTML = ""; resetHit(); root.focus(); }
+backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+
+function renderInput() {
+  panel.innerHTML = `
+    <input type="url" class="field fieldDim" id="urlField" placeholder="Plz input urls.." autocomplete="off" />
+    <button type="button" class="submitBtn" id="submitBtn">SUBMIT</button>`;
+  const field = document.getElementById("urlField");
+  const btn = document.getElementById("submitBtn");
+  let valid = true;
+
+  field.addEventListener("input", () => {
+    valid = field.validity.valid;
+    const has = field.value.trim().length > 0;
+    field.classList.toggle("fieldDim", !has);
+    btn.classList.toggle("active", has);
+    const err = panel.querySelector(".errorText");
+    if (err) err.remove();
+  });
+
+  const submit = () => {
+    const url = field.value.trim();
+    if (!url) return;
+    if (!valid) {
+      if (!panel.querySelector(".errorText")) {
+        const p = document.createElement("p");
+        p.className = "errorText";
+        p.textContent = "X Not a link address type";
+        panel.insertBefore(p, btn);
+      }
+      return;
+    }
+    renderLoading();
+    window.setTimeout(renderDone, 1200);
+  };
+  btn.addEventListener("click", submit);
+  field.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  field.focus();
+}
+
+function renderLoading() {
+  panel.innerHTML = `<p class="stateMsg" id="loadMsg">I&rsquo;m checking it ..</p>`;
+  const el = document.getElementById("loadMsg");
+  let on = false;
+  panel.dataset.timer = window.setInterval(() => {
+    on = !on;
+    el.textContent = on ? "I’m checking it ..." : "I’m checking it ..";
+  }, 450);
+}
+
+function renderDone() {
+  window.clearInterval(Number(panel.dataset.timer));
+  panel.innerHTML = `
+    <p class="stateMsg">Done complete!</p>
+    <p class="stateSub">Registration may take a few hours or a few days.</p>`;
+  window.setTimeout(closeModal, 2400);
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && backdrop.classList.contains("on")) closeModal();
+});
+</script>
+</body>
+</html>

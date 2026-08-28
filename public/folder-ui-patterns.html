@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Folder UI — Coverflow Preview</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@800&family=Bebas+Neue&family=Cormorant+Garamond:wght@400&family=Instrument+Serif&family=Inter:wght@800&family=JetBrains+Mono:wght@700&family=Space+Grotesk:wght@700&family=Space+Mono:wght@700&display=swap"
+  rel="stylesheet" />
+
+<style>
+  @font-face {
+    font-family: "PP Palma Fizzy Heavy";
+    src: url("/fonts/PPPalma-FizzyHeavy.otf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "PP Palma Medium";
+    src: url("/fonts/PPPalma-Medium.otf") format("opentype");
+    font-display: swap;
+  }
+
+  :root {
+    /* 폴더 밖 — 사이트 기존 3색 언어 유지 */
+    --dim: #8a8a8a;
+    --point: #ffe345;
+    --danger: #ff3b30;
+    --bg: #b2b2b2;
+    --side-margin: 100px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 배경 질감 — 사이트와 동일 */
+  .bgLayer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; }
+  .b1 { width: 46vw; height: 46vw; background: #fff; left: -8vw; top: -10vw; animation: d1 28s ease-in-out infinite; }
+  .b2 { width: 38vw; height: 38vw; background: #1a1a1a; right: -6vw; top: 8vh; animation: d2 34s ease-in-out infinite; }
+  .b3 { width: 30vw; height: 30vw; background: #1a1a1a; left: 18vw; bottom: -12vw; animation: d3 40s ease-in-out infinite; }
+  @keyframes d1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(6vw,8vh)} }
+  @keyframes d2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-8vw,10vh)} }
+  @keyframes d3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(10vw,-6vh)} }
+
+  /* ══ 코버플로 — Originkit rootStyle 그대로 ══════════════ */
+  .cfRoot {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 320px;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1600px;        /* PERSPECTIVE */
+    overflow: hidden;
+    outline: none;
+  }
+  .cfTrack { position: relative; transform-style: preserve-3d; }
+
+  .cfCard {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transform-origin: center center;
+    background-color: #1a1a1a;  /* 원본 cardStyle 값 유지 */
+  }
+
+  /* 이미지 자리 — 슬라이드 이미지가 없으므로 피쳐 무드 컬러 면으로 대체 */
+  .cfFill { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* 가독성 그라디언트 — 원본 bottomLeft 기준 */
+  .cfGrad {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+  }
+
+  /* 타이틀 — 원본 titlePosition bottomLeft / padding 22·22·24 */
+  .cfTitleBox {
+    position: absolute;
+    left: 22px; right: 22px; bottom: 24px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .cfTitle {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1em;
+    letter-spacing: -0.02em;
+    white-space: pre-line;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    /* fontFamily 만 피쳐별로 주입 (임시) */
+  }
+
+  .cfDim { position: absolute; inset: 0; background: #000000; pointer-events: none; }
+  /* == 피쳐별 패턴 - 색 외의 구분축. 전부 CSS/인라인 SVG ==
+     근거: pattern-research.md */
+  .cfPat { position: absolute; inset: 0; pointer-events: none; }
+
+  /* WEB - 컬럼 그리드 + 뷰포트 */
+  .pat-web {
+    background-image: repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.16) 0 26px, transparent 26px 44px);
+    background-position: center;
+  }
+  .pat-web::after {
+    content: ""; position: absolute; inset: 34px 30px;
+    border: 1.5px solid rgba(255,255,255,0.30);
+    border-radius: 4px;
+  }
+
+  /* UI - 8pt 격자 + 컴포넌트 블록 */
+  .pat-ui {
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 24px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 24px);
+  }
+  .pat-ui::before {
+    content: ""; position: absolute;
+    left: 48px; top: 60px; width: 168px; height: 44px;
+    border-radius: 22px; background: rgba(255,255,255,0.20);
+    box-shadow: 0 72px 0 rgba(255,255,255,0.13), 0 132px 0 rgba(255,255,255,0.08);
+  }
+  .pat-ui::after {
+    content: ""; position: absolute;
+    right: 52px; top: 66px; width: 60px; height: 32px;
+    border-radius: 16px; background: rgba(255,255,255,0.26);
+  }
+
+  /* GRAPHIC - CMYK 하프톤(22.5도) + 레지스트레이션 마크 */
+  .pat-graphic {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.34) 26%, transparent 27%);
+    background-size: 17px 17px;
+    background-repeat: space;
+    transform: rotate(22.5deg) scale(1.5);
+    transform-origin: center;
+  }
+  .pat-graphicMarks::before,
+  .pat-graphicMarks::after {
+    content: ""; position: absolute; width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.55);
+    background:
+      linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)) center/1.5px 46px no-repeat,
+      linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)) center/46px 1.5px no-repeat;
+  }
+  .pat-graphicMarks::before { left: 26px; top: 26px; }
+  .pat-graphicMarks::after  { right: 26px; top: 26px; }
+
+  /* TYPE - 베이스라인 그리드 + 대형 글리프 */
+  .pat-type {
+    background-image: repeating-linear-gradient(0deg,
+      rgba(255,255,255,0.14) 0 1px, transparent 1px 32px);
+  }
+  .pat-typeGlyph {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Instrument Serif', serif;
+    font-size: 300px; line-height: 1;
+    color: rgba(255,255,255,0.13);
+    user-select: none;
+  }
+
+  /* MOTION - 이징 곡선 + 타임라인 프레임 */
+  .pat-motion {
+    background-image: repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.20) 0 1.5px, transparent 1.5px 30px);
+    background-size: 100% 26px;
+    background-repeat: repeat-x;
+    background-position: left bottom 54px;
+  }
+  .pat-motionCurve {
+    position: absolute; inset: 0;
+    background-repeat: no-repeat;
+    background-position: center 40%;
+    background-size: 74% 48%;
+  }
+
+  /* PHOTO - 필름 그레인 + 스프로킷 홀 */
+  .pat-photoGrain {
+    position: absolute; inset: 0;
+    opacity: 0.55;
+    mix-blend-mode: overlay;
+  }
+  .pat-photoHoles::before,
+  .pat-photoHoles::after {
+    /* 단색 그라디언트를 그대로 repeat-y 하면 타일이 꽉 차서 실선이 된다.
+       타일 안에 투명 구간을 넣어야 구멍 사이 간격이 생긴다. */
+    content: ""; position: absolute; top: 0; bottom: 0; width: 15px;
+    background-image: linear-gradient(
+      rgba(255,255,255,0.46) 0 20px, transparent 20px 34px);
+    background-size: 15px 34px;
+    background-repeat: repeat-y;
+    background-position: center 12px;
+  }
+  .pat-photoHoles::before { left: 18px; }
+  .pat-photoHoles::after  { right: 18px; }
+
+  /* COLOR - 색상환 */
+  .pat-colorWheel {
+    position: absolute;
+    left: 50%; top: 42%;
+    width: 246px; height: 246px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: conic-gradient(#ff4d4d, #ffb03a, #ffe345, #4ade80, #38bdf8, #6366f1, #d946ef, #ff4d4d);
+    opacity: 0.85;
+  }
+  .pat-colorWheel::after {
+    content: ""; position: absolute; inset: 62px;
+    border-radius: 50%; background: #DB2777;
+  }
+
+  /* ICON - 24px 키라인 그리드 + 키셰이프 */
+  .pat-icon {
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 25px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 25px);
+    background-position: center;
+  }
+  .pat-iconKeys::before {
+    content: ""; position: absolute;
+    left: 50%; top: 42%; width: 200px; height: 200px;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    border-radius: 50%;
+  }
+  .pat-iconKeys::after {
+    content: ""; position: absolute;
+    left: 50%; top: 42%; width: 168px; height: 200px;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid rgba(255,255,255,0.26);
+  }
+
+  /* CODE - 들여쓰기 계단 + 커서 */
+  .pat-code {
+    background-image: repeating-linear-gradient(0deg,
+      rgba(255,255,255,0.055) 0 18px, transparent 18px 30px);
+  }
+  .pat-codeLines { position: absolute; left: 44px; top: 54px; right: 44px; }
+  .pat-codeLine {
+    height: 9px; border-radius: 3px;
+    background: rgba(255,255,255,0.20);
+    margin-bottom: 21px;
+  }
+  .pat-codeCaret {
+    display: inline-block; width: 9px; height: 20px;
+    background: rgba(255,255,255,0.75);
+    animation: rv-caret 1.05s steps(2, start) infinite;
+    vertical-align: -4px;
+  }
+  @keyframes rv-caret { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
+
+
+  /* ══ 폴더 밖 — 기존 3색 언어 ═══════════════════════════ */
+  .hitWrap { position: fixed; top: 34px; right: var(--side-margin); z-index: 70; }
+  .hitBtn {
+    position: relative; display: block; padding: 10px 4px;
+    border: none; margin: 0; background: transparent; cursor: pointer; line-height: 1;
+  }
+  .hitStage { position: relative; display: inline-block; }
+  .hitLabel {
+    margin: 0;
+    font-family: "PP Palma Fizzy Heavy", sans-serif;
+    font-size: 30px; line-height: 0.9em; letter-spacing: -0.02em;
+    white-space: pre; user-select: none;
+  }
+  .hitBase { color: var(--dim); }
+  .hitFillLayer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    transition: clip-path 320ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+  .hitFill { color: var(--point); }
+  .dripLayer { position: absolute; left: 0; right: 0; top: 100%; pointer-events: none; }
+  .dripTrail {
+    position: absolute; top: -5px; width: 4px; height: 0;
+    background: var(--point); border-radius: 0 0 2px 2px;
+    transform: translateX(-50%);
+    animation: rv-drip 1.6s cubic-bezier(0.4, 0, 0.7, 0.35) forwards;
+  }
+  @keyframes rv-drip { from { height: 0; } to { height: 54px; } }
+
+  .backdrop {
+    position: fixed; inset: 0; z-index: 80;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .backdrop.on { display: flex; }
+  .panel {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 26px;
+    width: min(520px, 84vw); padding: 30px;
+    background: rgba(255,255,255,0.1); border-radius: 30px;
+  }
+  .field {
+    width: 100%; padding: 16px 20px;
+    border: 2.5px solid var(--point); border-radius: 14px;
+    background: transparent; outline: none;
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 24px; color: var(--point);
+  }
+  .field::placeholder { color: var(--point); opacity: 0.55; }
+  .fieldDim { border-color: rgba(255,227,69,0.55); }
+  .errorText {
+    align-self: flex-start; margin: -18px 0 0;
+    font-family: "PP Palma Medium", sans-serif; font-size: 12px; color: var(--danger);
+  }
+  .submitBtn {
+    padding: 11px 30px; border: 2.5px solid var(--point); border-radius: 999px;
+    background: transparent; color: var(--point);
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 17px; letter-spacing: 0.05em;
+    cursor: pointer; opacity: 0.55; transition: opacity 200ms ease;
+  }
+  .submitBtn.active { opacity: 1; }
+  .stateMsg {
+    width: 100%; text-align: center; padding: 26px 0 10px;
+    font-family: "PP Palma Fizzy Heavy", sans-serif; font-size: 30px; color: var(--point);
+  }
+  .stateSub {
+    width: 100%; text-align: center;
+    font-family: "PP Palma Medium", sans-serif; font-size: 11px; color: var(--point); opacity: 0.75;
+  }
+</style>
+</head>
+<body>
+
+<div class="bgLayer">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
+
+<div class="hitWrap">
+  <button class="hitBtn" id="hitBtn" aria-label="Hit me !">
+    <span class="hitStage" id="hitStage">
+      <p class="hitLabel hitBase">Hit me !</p>
+      <span class="hitFillLayer" id="hitFillLayer" style="clip-path: inset(100% 0 0 0)">
+        <p class="hitLabel hitFill" id="hitFillText">Hit me !</p>
+      </span>
+    </span>
+  </button>
+</div>
+
+<div class="cfRoot" id="cfRoot" tabindex="0" role="group" aria-roledescription="carousel">
+  <div class="cfTrack" id="cfTrack"></div>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   Originkit "CoverflowGallery" (preset: custom-style) 이식.
+   인터랙션 로직과 애니메이션 값은 원본 그대로 사용한다.
+   ────────────────────────────────────────────────────────── */
+
+// Fixed internals — 원본 상수
+const PERSPECTIVE = 1600;
+const SCALE_STEP  = 0.16;
+const MAX_VISIBLE = 2;
+const DEPTH       = 240;
+
+// COMPONENT_DEFAULTS + __originkitPresetProps 병합 결과
+const PROPS = {
+  cardWidth: 500,
+  cardHeight: 400,
+  radius: 4,
+  tilt: 16,
+  sideTilt: 6,
+  gap: 10,
+  opacity: 60,
+  autoplay: false,
+  autoplayDirection: "rightToLeft",
+  transition: { type: "tween", duration: 0.8, delay: 2.5, ease: [0.22, 1, 0.36, 1] },
+  showTitle: true,
+  titleColor: "#ffffff",
+  titlePosition: { position: "bottomLeft", paddingLeft: 22, paddingRight: 22, paddingTop: 24, paddingBottom: 24 },
+};
+
+// 슬라이드 = 피쳐 9개. 이미지가 없으므로 무드 컬러 면으로 대체하고,
+// 타이틀에 피쳐 이름과 피쳐별 폰트를 임시로 적용한다.
+const FEATURES = [
+  { key:"web",     label:"WEB",     ink:"#12457A", font:"'Space Grotesk', sans-serif" },
+  { key:"ui",      label:"UI",      ink:"#3E4A57", font:"'Inter', sans-serif" },
+  { key:"graphic", label:"GRAPHIC", ink:"#C2410C", font:"'Anton', sans-serif" },
+  { key:"type",    label:"TYPE",    ink:"#171512", font:"'Instrument Serif', serif" },
+  { key:"motion",  label:"MOTION",  ink:"#4C1D95", font:"'Bebas Neue', sans-serif" },
+  { key:"photo",   label:"PHOTO",   ink:"#3F5E4A", font:"'Cormorant Garamond', serif" },
+  { key:"color",   label:"COLOR",   ink:"#DB2777", font:"'Baloo 2', system-ui, sans-serif" },
+  { key:"icon",    label:"ICON",    ink:"#0F766E", font:"'Space Mono', monospace" },
+  { key:"code",    label:"CODE",    ink:"#0E1116", font:"'JetBrains Mono', monospace" },
+];
+
+// 원본 cssTransition()
+function cssTransition(t) {
+  const d = t && typeof t.duration === "number" ? t.duration : 0.6;
+  let ez = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const e = t && t.ease;
+  if (Array.isArray(e) && e.length === 4) {
+    ez = `cubic-bezier(${e[0]}, ${e[1]}, ${e[2]}, ${e[3]})`;
+  } else if (typeof e === "string") {
+    const map = { linear: "linear", easeIn: "ease-in", easeOut: "ease-out", easeInOut: "ease-in-out" };
+    ez = map[e] || "ease";
+  }
+  return { dur: d, ease: ez };
+}
+
+const { dur, ease } = cssTransition(PROPS.transition);
+const transitionCss = `transform ${dur}s ${ease}, opacity ${dur}s ${ease}`;
+
+// 원본 effectiveRadius / dim
+const effectiveRadius =
+  (Math.max(0, Math.min(20, PROPS.radius)) / 20) *
+  (Math.min(PROPS.cardWidth, PROPS.cardHeight) / 2);
+const dimAmount = 1 - Math.max(0, Math.min(100, PROPS.opacity)) / 100;
+
+const root = document.getElementById("cfRoot");
+const track = document.getElementById("cfTrack");
+const n = FEATURES.length;
+const loop = true;      // 원본: Loop is always on
+let active = 0;
+
+track.style.width = PROPS.cardWidth + "px";
+track.style.height = PROPS.cardHeight + "px";
+
+
+// -- 피쳐별 패턴 레이어 (근거: pattern-research.md) --------
+// 카드 면만 교체한다. 원본의 transform/transition/dim 값은 건드리지 않음.
+const GRAIN_URI = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">' +
+  '<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter>' +
+  '<rect width="100%" height="100%" filter="url(#n)"/></svg>'
+);
+
+const EASING_URI = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">' +
+  '<path d="M0,100 C22,100 36,0 100,0" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"/>' +
+  '<circle cx="2" cy="98" r="3" fill="rgba(255,255,255,0.85)"/>' +
+  '<circle cx="98" cy="2" r="3" fill="rgba(255,255,255,0.85)"/>' +
+  '</svg>'
+);
+
+function buildPattern(key) {
+  const wrap = document.createElement("div");
+  wrap.className = "cfPat";
+  wrap.style.overflow = "hidden";
+
+  const add = (cls, fn) => {
+    const d = document.createElement("div");
+    d.className = "cfPat " + cls;
+    if (fn) fn(d);
+    wrap.appendChild(d);
+    return d;
+  };
+
+  if (key === "web") add("pat-web");
+  else if (key === "ui") add("pat-ui");
+  else if (key === "graphic") { add("pat-graphic"); add("pat-graphicMarks"); }
+  else if (key === "type") { add("pat-type"); add("pat-typeGlyph").textContent = "Aa"; }
+  else if (key === "motion") {
+    add("pat-motion");
+    add("pat-motionCurve", (d) => { d.style.backgroundImage = 'url("' + EASING_URI + '")'; });
+  }
+  else if (key === "photo") {
+    add("pat-photoGrain", (d) => {
+      d.style.backgroundImage = 'url("' + GRAIN_URI + '")';
+      d.style.filter = "contrast(180%) brightness(140%)";
+    });
+    add("pat-photoHoles");
+  }
+  else if (key === "color") add("pat-colorWheel");
+  else if (key === "icon") { add("pat-icon"); add("pat-iconKeys"); }
+  else if (key === "code") {
+    add("pat-code");
+    const box = add("pat-codeLines");
+    const widths = [46, 78, 62, 88, 54];
+    const indents = [0, 22, 44, 44, 22];
+    widths.forEach((w, i) => {
+      const line = document.createElement("div");
+      line.className = "pat-codeLine";
+      line.style.width = w + "%";
+      line.style.marginLeft = indents[i] + "px";
+      box.appendChild(line);
+    });
+    const row = document.createElement("div");
+    row.style.marginLeft = "22px";
+    const caret = document.createElement("span");
+    caret.className = "pat-codeCaret";
+    row.appendChild(caret);
+    box.appendChild(row);
+  }
+  return wrap;
+}
+
+const cards = FEATURES.map((f, i) => {
+  const card = document.createElement("div");
+  card.className = "cfCard";
+  card.style.width = PROPS.cardWidth + "px";
+  card.style.height = PROPS.cardHeight + "px";
+  card.style.borderRadius = effectiveRadius + "px";
+  card.style.transition = transitionCss;
+  card.setAttribute("aria-label", f.label);
+
+  const fill = document.createElement("div");
+  fill.className = "cfFill";
+  fill.style.background = f.ink;
+
+  const grad = document.createElement("div");
+  grad.className = "cfGrad";
+
+  const titleBox = document.createElement("div");
+  titleBox.className = "cfTitleBox";
+  const title = document.createElement("span");
+  title.className = "cfTitle";
+  title.style.fontFamily = f.font;
+  title.textContent = f.label;
+  titleBox.appendChild(title);
+
+  const dimEl = document.createElement("div");
+  dimEl.className = "cfDim";
+  dimEl.style.transition = `opacity ${dur}s ${ease}`;
+
+  card.append(fill, buildPattern(f.key), grad);
+  if (PROPS.showTitle) card.append(titleBox);
+  card.append(dimEl);
+
+  card.addEventListener("click", () => handleCardClick(i));
+  track.appendChild(card);
+  return { el: card, dimEl };
+});
+
+// 원본 map 내부 계산식 그대로
+function render() {
+  cards.forEach(({ el, dimEl }, i) => {
+    let rel = i - active;
+    if (loop) {
+      if (rel > n / 2) rel -= n;
+      if (rel < -n / 2) rel += n;
+    }
+    const ax = Math.abs(rel);
+    const visible = ax <= MAX_VISIBLE;
+    const isActive = rel === 0;
+    const sc = Math.max(0.4, 1 - ax * SCALE_STEP);
+    const tx = rel * (PROPS.gap * 30);
+    const tz = -ax * DEPTH;
+    const ry = -rel * PROPS.tilt;
+    const rz = rel * PROPS.sideTilt;
+
+    el.style.transform =
+      `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${sc})`;
+    el.style.opacity = visible ? 1 : 0;
+    el.style.cursor = PROPS.autoplay || isActive ? "default" : "pointer";
+    el.style.pointerEvents = visible && !PROPS.autoplay ? "auto" : "none";
+    dimEl.style.opacity = isActive ? 0 : dimAmount;
+  });
+}
+
+// 원본 lock / step / handleCardClick
+const moveDur =
+  PROPS.transition && typeof PROPS.transition.duration === "number" ? PROPS.transition.duration : 0.6;
+let locked = false;
+function lock() {
+  locked = true;
+  window.setTimeout(() => { locked = false; }, Math.max(50, moveDur * 1000));
+}
+function step(dir) {
+  if (locked) return;
+  lock();
+  active = (((active + dir) % n) + n) % n;
+  render();
+}
+function handleCardClick(i) {
+  if (PROPS.autoplay || locked) return;
+  lock();
+  active = i === active ? (active + 1) % n : i;
+  render();
+}
+
+root.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+});
+
+// 원본엔 없는 편의 입력 — 이동은 원본 step() 을 그대로 호출한다
+window.addEventListener("wheel", (e) => {
+  if (e.target instanceof Element && e.target.closest(".panel")) return;
+  e.preventDefault();
+  step(Math.sign(e.deltaY) || 1);
+}, { passive: false });
+
+render();
+root.focus();
+
+
+/* ══ 폴더 밖: Hit me 4타 + 드립 + 링크 추가 (사이트 동일) ══ */
+const FILL_STEPS = [0.29, 0.53, 0.79, 1];
+const STEP_JITTER = 0.04;
+const DRIP_MS = 1600;
+
+const hitBtn = document.getElementById("hitBtn");
+const hitStage = document.getElementById("hitStage");
+const fillLayer = document.getElementById("hitFillLayer");
+let hits = 0, dripping = false;
+
+function measureDripLeft() {
+  const p = document.getElementById("hitFillText");
+  const idx = p.textContent.indexOf("m");
+  const range = document.createRange();
+  range.setStart(p.firstChild, idx);
+  range.setEnd(p.firstChild, idx + 1);
+  const r = range.getBoundingClientRect();
+  const s = hitStage.getBoundingClientRect();
+  return r.left - s.left + r.width / 2;
+}
+
+hitBtn.addEventListener("click", () => {
+  if (dripping) return;
+  hits = Math.min(FILL_STEPS.length, hits + 1);
+  const isFinal = hits >= FILL_STEPS.length;
+  const base = FILL_STEPS[hits - 1];
+  const p = isFinal ? 1 : Math.min(0.95, base + (Math.random() * 2 - 1) * STEP_JITTER);
+  fillLayer.style.clipPath = `inset(${(1 - p) * 100}% 0 0 0)`;
+
+  hitStage.animate(
+    [
+      { transform: "scale(1,1)" }, { transform: "scale(1.22,0.6)" },
+      { transform: "scale(0.86,1.14)" }, { transform: "scale(1.04,0.96)" },
+      { transform: "scale(1,1)" },
+    ],
+    { duration: 420, easing: "ease-in-out" }
+  );
+
+  if (isFinal) {
+    dripping = true;
+    const drip = document.createElement("div");
+    drip.className = "dripLayer";
+    const trail = document.createElement("span");
+    trail.className = "dripTrail";
+    trail.style.left = `${measureDripLeft()}px`;
+    drip.appendChild(trail);
+    hitStage.appendChild(drip);
+    window.setTimeout(() => { openModal(); drip.remove(); }, DRIP_MS);
+  }
+});
+
+function resetHit() { hits = 0; dripping = false; fillLayer.style.clipPath = "inset(100% 0 0 0)"; }
+
+const backdrop = document.getElementById("backdrop");
+const panel = document.getElementById("panel");
+function openModal() { renderInput(); backdrop.classList.add("on"); }
+function closeModal() { backdrop.classList.remove("on"); panel.innerHTML = ""; resetHit(); root.focus(); }
+backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+
+function renderInput() {
+  panel.innerHTML = `
+    <input type="url" class="field fieldDim" id="urlField" placeholder="Plz input urls.." autocomplete="off" />
+    <button type="button" class="submitBtn" id="submitBtn">SUBMIT</button>`;
+  const field = document.getElementById("urlField");
+  const btn = document.getElementById("submitBtn");
+  let valid = true;
+
+  field.addEventListener("input", () => {
+    valid = field.validity.valid;
+    const has = field.value.trim().length > 0;
+    field.classList.toggle("fieldDim", !has);
+    btn.classList.toggle("active", has);
+    const err = panel.querySelector(".errorText");
+    if (err) err.remove();
+  });
+
+  const submit = () => {
+    const url = field.value.trim();
+    if (!url) return;
+    if (!valid) {
+      if (!panel.querySelector(".errorText")) {
+        const p = document.createElement("p");
+        p.className = "errorText";
+        p.textContent = "X Not a link address type";
+        panel.insertBefore(p, btn);
+      }
+      return;
+    }
+    renderLoading();
+    window.setTimeout(renderDone, 1200);
+  };
+  btn.addEventListener("click", submit);
+  field.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  field.focus();
+}
+
+function renderLoading() {
+  panel.innerHTML = `<p class="stateMsg" id="loadMsg">I&rsquo;m checking it ..</p>`;
+  const el = document.getElementById("loadMsg");
+  let on = false;
+  panel.dataset.timer = window.setInterval(() => {
+    on = !on;
+    el.textContent = on ? "I’m checking it ..." : "I’m checking it ..";
+  }, 450);
+}
+
+function renderDone() {
+  window.clearInterval(Number(panel.dataset.timer));
+  panel.innerHTML = `
+    <p class="stateMsg">Done complete!</p>
+    <p class="stateSub">Registration may take a few hours or a few days.</p>`;
+  window.setTimeout(closeModal, 2400);
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && backdrop.classList.contains("on")) closeModal();
+});
+</script>
+</body>
+</html>

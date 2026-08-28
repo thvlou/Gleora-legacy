@@ -1,0 +1,29 @@
+.link {
+  outline: none;
+}
+
+.link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+/* 터치 모드 롱프레스 미리보기 — 화면 중앙 고정, 손가락은 원래 누르고
+   있던 행 위에 그대로 있으므로 배경은 pointer-events 를 막아 스크롤/탭을
+   방해하지 않는다. */
+.touchPreviewBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.touchPreviewCard {
+  max-width: 90vw;
+  overflow: hidden;
+  background: rgba(30, 30, 30, 0.85);
+}

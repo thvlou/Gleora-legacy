@@ -1,0 +1,88 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  /* 100px 은 데스크탑 520px 필드 기준으로 잡은 간격이라, 필드가 88vw 로
+     줄어드는 좁은 화면에선 그대로 두면 상대적으로 과하게 넓어 보인다. */
+  gap: clamp(40px, 14vw, 100px);
+  width: fit-content;
+  max-width: 92vw;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+}
+
+.fieldWrap {
+  position: relative;
+  /* 520px 은 데스크탑 고정폭 — 좁은 화면에서도 그대로 두면 카드가 화면
+     밖으로 넘친다. aspect-ratio 로 손그림 테두리 SVG 의 원래 비율(520:90)을
+     유지한 채 폭만 줄인다. */
+  width: min(520px, 88vw);
+  aspect-ratio: 520 / 90;
+  flex-shrink: 0;
+}
+
+.fieldBorder {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  /* 픽셀 고정값(528/98) 대신 fieldWrap 기준 상대값으로 둬서, 폭이 줄어도
+     "테두리가 4px 씩 삐져나온" 관계 자체는 그대로 비율 유지된다. */
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* 입력 전(빈 값)엔 텍스트(플레이스홀더)와 같은 60% 오퍼시티로 같이 흐리게. */
+.fieldBorderDim {
+  opacity: 0.6;
+}
+
+.fieldBorder svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  /* % 패딩은(위아래 포함) 항상 부모 "폭" 기준으로 계산된다 — fieldWrap 폭이
+     줄어들면 안쪽 여백도 20/520 비율 그대로 같이 줄어, 좁은 화면에서도
+     테두리 안에 텍스트가 끼지 않는다. */
+  padding: 3.85%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: "PP Palma Fizzy Heavy", sans-serif;
+  /* fieldWrap 이 88vw 로 줄어드는 구간(뷰포트 591px 미만)에 맞춘 비율 —
+     520px 폭일 때 36px 이던 것과 정확히 같은 비율(36/520)로 줄어든다. */
+  font-size: clamp(18px, 6.09vw, 36px);
+  color: #ffe345;
+}
+
+.field::placeholder {
+  color: #ffe345;
+  opacity: 0.6;
+}
+
+/* 필드 바로 아래(패널의 100px gap 안쪽)에 뜨는 경고 — 레이아웃엔 영향을
+   주지 않도록 fieldWrap 기준 절대 위치로 띄운다. Fizzy가 아닌 담백한
+   Medium 굵기를 쓰고, X도 유니코드 기호(✕) 대신 같은 폰트의 대문자 X를
+   써서 본문 글자와 굵기·위계가 어긋나지 않게 한다. */
+.errorText {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin: 10px 0 0;
+  font-family: "PP Palma Medium", sans-serif;
+  font-size: 12px;
+  color: #ff3b30;
+  white-space: nowrap;
+}
