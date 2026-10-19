@@ -30,6 +30,35 @@
     --danger: #ff3b30;
     --side-margin: 100px;
 
+    /* ── 배경 후보 ────────────────────────────────────────
+       기존 #0a0a0a 는 명도가 10/255 뿐이라, 카드 드롭섀도
+       rgba(0,0,0,0.55) 가 10단계밖에 못 어두워져 사실상 안 보였다.
+       아래 후보는 전부 그 여유를 확보한 값들.
+       바꿔볼 땐 맨 아래 --bg 한 줄만 교체하면 된다.
+       후보는 비교용으로 남겨둔다 — 지운 뒤 다시 만들기보다 싸다. */
+    --bg-a: #0a0a0a;   /* 원래 값 — 평평, 그림자 안 보임 */
+    --bg-b: #121214;   /* 단색. 그림자만 살림 (가장 안전) */
+    --bg-c: #0e1014;   /* 단색 + 쿨 틴트 */
+    --bg-e: radial-gradient(ellipse 75% 58% at 50% 44%,
+              #191a20 0%, #0e0e12 62%, #08080a 100%);  /* 스테이지, 은은 */
+    --bg-f: radial-gradient(ellipse 75% 58% at 50% 44%,
+              #212128 0%, #0e0e12 62%, #08080a 100%);  /* 스테이지, 강하게 */
+
+    /* ── 유광(글로시) 후보 ────────────────────────────────
+       카드의 .cfSheen 은 좌상단 18% 6% 하이라이트 / 우하단 88% 96% 그림자로
+       광원 방향이 이미 정해져 있다. 배경 스페큘러도 같은 방향이어야
+       카드와 배경이 한 공간에 있는 것으로 읽힌다.
+       베이스는 --bg-c 의 쿨 틴트를 유지한다.
+       레이어는 2개로 묶었다 — 3개부터 래스터가 눈에 띄게 무거워진다. */
+    --bg-g1: radial-gradient(90% 70% at 20% 4%,
+               rgba(255,255,255,0.10), transparent 55%), #0c0e12;   /* 피아노 블랙 */
+    --bg-g2: radial-gradient(60% 45% at 24% -4%,
+               rgba(255,255,255,0.17), transparent 60%), #08090c;   /* 웻룩 */
+    --bg-g3: linear-gradient(168deg,
+               rgba(255,255,255,0.075) 0%, transparent 42%), #0a0b0e; /* 레이킹 락커 */
+
+    --bg: var(--bg-g1);
+
     /* 로고 팔레트 — 사용자 제공 9색 (선형 그라데이션 소스) */
     --p1: #33afc2;  /* cyan   */
     --p2: #d06cd9;  /* orchid */
@@ -46,7 +75,7 @@
   html, body { height: 100%; }
   body {
     margin: 0;
-    background: #0a0a0a;      /* 다크 — Figma 컴포넌트가 설계된 환경 */
+    background: var(--bg);
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
   }
@@ -57,18 +86,85 @@
      Figma 에서 SVG 로 내보내 글자를 패스로 고정했다 —
      서체·자간·9색 그라디언트(alpha 0.4)가 컴포넌트와 동일.
      배경 rect 와 아트보드 잔재만 제거했다.
-     크기는 Hit me 버튼과 동일한 시각 높이(27px)에 맞춤. */
+     크기 130px 폭 / 오퍼시티 0.65 는 요청에 따른 조정값 —
+     Figma 원본은 alpha 0.4 였다(다크 배경 기준). */
   .logo {
     position: fixed;
-    top: 44px;   /* Hit me 라벨과 같은 광학 기준선 (버튼 padding 10px 보정) */
+    top: 44px;
     left: var(--side-margin);
     z-index: 70;
     margin: 0;
     display: block;
-    height: 27px;          /* Hit me: 30px * line-height 0.9 = 27px */
-    width: auto;
+    width: 130px;          /* 요청 크기 — 높이는 원본 비율(225:53)대로 자동 */
+    height: auto;
     user-select: none;
     -webkit-user-drag: none;
+  }
+
+  /* ══ 로고 광택 — 유리에 빛이 스치는 반사 ═══════════════
+     로고 SVG 는 <path id="Gleora"> 하나뿐이라 글자별로 잡을 수 없다.
+     그래서 원본 <img> 는 전혀 건드리지 않고, 같은 자리에 같은 크기의
+     오버레이를 얹어 로고 실루엣으로 마스킹한다.
+     → 폰트·색·크기·오퍼시티 등 원본 설정값은 그대로다. 빛만 더해진다.
+
+     마스크로 쓰는 SVG 의 path 에 fill-opacity="0.65" 가 들어 있어,
+     광택 농도도 로고와 같은 65% 를 자동으로 따라간다.
+
+     좁은 사선 띠가 좌 → 우로 지나가며 글자(와 색 블록)를 차례로 스친다.
+     background-position 대신 transform 으로 움직인다 — 리페인트 대신
+     컴포지팅만 일어나서 훨씬 싸다. */
+  .logoGlint {
+    position: fixed;
+    top: 44px;                  /* .logo 와 완전히 동일한 박스 */
+    left: var(--side-margin);
+    width: 130px;
+    aspect-ratio: 225 / 53;     /* 원본 뷰박스 비율 */
+    z-index: 71;
+    pointer-events: none;
+    overflow: hidden;
+
+    -webkit-mask-image: url("/gleora-logo.svg");
+            mask-image: url("/gleora-logo.svg");
+    -webkit-mask-size: 100% 100%;
+            mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+
+    /* 더하기만 — 어두운 배경에서 screen 은 사실상 가산 합성이다.
+       원본 색을 어둡게 하거나 색상을 틀지 않는다. */
+    mix-blend-mode: screen;
+  }
+
+  /* 띠는 컨테이너와 같은 폭으로 두고, 밝은 구간만 그라디언트 스톱으로 좁힌다.
+     translateX(%) 는 자기 폭 기준이라, 띠 엘리먼트를 좁히면 폭을 바꿀 때마다
+     위치까지 같이 밀린다. 폭 100% 로 고정하면 -100% = 완전히 왼쪽 밖,
+     +100% = 완전히 오른쪽 밖으로 항상 예측 가능하다. */
+  .logoGlint::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    bottom: -50%;
+    left: 0;
+    width: 100%;
+    /* 밝은 구간 18% — 순간마다 글자 한두 개만 스친다.
+       넓게 퍼뜨리면 단어 전체가 하얗게 떠서 색이 날아간다. */
+    background: linear-gradient(
+      105deg,
+      transparent 41%,
+      rgba(255, 255, 255, 0.80) 50%,
+      transparent 59%
+    );
+    /* 5s 주기 중 앞 1.4s 만 훑고 나머지는 쉰다 — 계속 움직이면 산만하다 */
+    animation: logoGlint 5s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  }
+
+  @keyframes logoGlint {
+    0%        { transform: translateX(-100%); }
+    28%, 100% { transform: translateX(100%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logoGlint { display: none; }
   }
 
   /* ══ 코버플로 — Originkit rootStyle 그대로 ══════════════ */
@@ -144,35 +240,7 @@
 
   .cfDim { position: absolute; inset: 0; background: #000000; pointer-events: none; }
 
-  /* ══ 폴더 밖 — 기존 3색 언어 ═══════════════════════════ */
-  .hitWrap { position: fixed; top: 34px; right: var(--side-margin); z-index: 70; }
-  .hitBtn {
-    position: relative; display: block; padding: 10px 4px;
-    border: none; margin: 0; background: transparent; cursor: pointer; line-height: 1;
-  }
-  .hitStage { position: relative; display: inline-block; }
-  .hitLabel {
-    margin: 0;
-    font-family: "PP Palma Fizzy Heavy", sans-serif;
-    font-size: 30px; line-height: 0.9em; letter-spacing: -0.02em;
-    white-space: pre; user-select: none;
-  }
-  .hitBase { color: var(--dim); }
-  .hitFillLayer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    transition: clip-path 320ms cubic-bezier(0.34, 1.3, 0.64, 1);
-  }
-  .hitFill { color: var(--point); }
-  .dripLayer { position: absolute; left: 0; right: 0; top: 100%; pointer-events: none; }
-  .dripTrail {
-    position: absolute; top: -5px; width: 4px; height: 0;
-    background: var(--point); border-radius: 0 0 2px 2px;
-    transform: translateX(-50%);
-    animation: rv-drip 1.6s cubic-bezier(0.4, 0, 0.7, 0.35) forwards;
-  }
-  @keyframes rv-drip { from { height: 0; } to { height: 54px; } }
-
+  /* ══ 링크 추가 모달 ═══════════════════════════════════ */
   .backdrop {
     position: fixed; inset: 0; z-index: 80;
     display: none; align-items: center; justify-content: center;
@@ -212,22 +280,1128 @@
     width: 100%; text-align: center;
     font-family: "PP Palma Medium", sans-serif; font-size: 11px; color: var(--point); opacity: 0.75;
   }
+
+/* =========================================================
+   Feature Card 내부 효과 (.feature-fx)
+   전달 문서 4절 CSS. 카드 외곽·carousel 은 대상으로 하지 않는다.
+   ── 프로젝트 반영 사항 ──
+   · --fx-serif 를 이미 로드된 Instrument Serif 로 연결
+   · .cfCard > .feature-fx 위치 지정(문서의 "부모 visual slot" 역할)
+   ========================================================= */
+
+/* 통합 훅 — 기존 카드의 visual 영역을 그대로 채운다.
+   카드 크기·radius·overflow 는 건드리지 않는다. */
+.cfCard > .feature-fx { position: absolute; inset: 0; }
+
+.feature-fx {
+  --fx-ease: cubic-bezier(.16, 1, .3, 1);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  box-sizing: border-box;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.feature-fx *,
+.feature-fx *::before,
+.feature-fx *::after { box-sizing: border-box; }
+
+.feature-fx button,
+.feature-fx input { font: inherit; }
+
+.feature-fx button:focus-visible,
+.feature-fx input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* ==================== COLOR ==================== */
+/* 레퍼런스(3D 렌더 데이지)를 따라 다시 그렸다.
+   꽃잎은 CSS 박스 + border-radius 가 아니라 SVG path 다 — 곡면 실루엣과
+   방향성 있는 음영은 사각 박스로는 근사만 되기 때문.
+   버튼 구조(.fx-petal)와 --r 회전, 호버 13px 분리, HEX 노출은 그대로 유지한다.
+
+   좌표계: 카드 500x400. 꽃 두 송이 + 줄기의 bbox 가 카드 중앙에 오도록
+   앞 꽃 (217,146) / 뒤 꽃 (301,194) / 줄기 끝 (250,360).
+   실측으로 bbox 중심을 카드 중심(250,200)에 맞췄다. */
+.feature-fx--color {
+  background:
+    radial-gradient(circle at 46% 32%, rgba(255, 228, 146, .52), transparent 54%),
+    #eda600;
+}
+
+/* 줄기 — 꽃 뒤 */
+.feature-fx--color .fx-stems {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.feature-fx--color .fx-stem-base {
+  fill: none;
+  stroke: #8f8d88;
+  stroke-width: 6.5;
+  stroke-linecap: round;
+}
+
+.feature-fx--color .fx-stem-lit {
+  fill: none;
+  stroke: #eeece6;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* 공중에 떠 있는 느낌 — 바닥 그림자 없이 자체 드롭섀도만 */
+.feature-fx--color .fx-flower,
+.feature-fx--color .fx-flower-back {
+  position: absolute;
+  filter: drop-shadow(0 16px 20px rgba(96, 58, 0, .30));
+}
+
+/* 앞 꽃 — 좌측을 향해 돌아간 각도 */
+.feature-fx--color .fx-flower {
+  left: 217px;
+  top: 146px;
+  z-index: 2;
+  width: 184px;
+  height: 184px;
+  margin: -92px 0 0 -92px;
+  transform: perspective(680px) rotateY(-26deg) rotateX(11deg) rotateZ(-6deg);
+}
+
+/* 뒤 꽃 — 반대쪽을 향한다 */
+.feature-fx--color .fx-flower-back {
+  left: 301px;
+  top: 194px;
+  z-index: 1;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  pointer-events: none;
+  transform: perspective(560px) rotateY(24deg) rotateX(8deg) rotateZ(7deg);
+}
+
+/* 꽃잎 — 버튼은 투명한 히트 영역, 형태와 음영은 안쪽 SVG 가 만든다 */
+.feature-fx--color .fx-petal,
+.feature-fx--color .fx-petal-back {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform-origin: 50% 100%;
+  transform: translate(-50%, -100%) rotate(var(--r));
+}
+
+.feature-fx--color .fx-petal {
+  width: 46px;
+  height: 92px;
+  cursor: pointer;
+  transition: transform 360ms var(--fx-ease), filter 240ms ease;
+}
+
+.feature-fx--color .fx-petal-back {
+  width: 32px;
+  height: 64px;
+  pointer-events: none;
+}
+
+.feature-fx--color .fx-petal svg,
+.feature-fx--color .fx-petal-back svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* HEX 라벨 — 꽃의 3D 변환 밖, 평면 오버레이에 둔다.
+   꽃잎 안에 두면 두 가지가 어긋난다.
+     1) 역회전해도 텍스트 박스가 가로로 길어 방향마다 반지름 두께가 다르다
+     2) 꽃의 perspective/rotateY 가 라벨까지 왜곡해 위치마다 크기가 달라진다
+        (실측: 21x9 ~ 28x10, 중심까지 거리 66~90px)
+   평면으로 빼면 크기가 일정해지고, 위치는 JS 가 꽃잎 방향으로 계산해
+   모든 잎에서 같은 간격이 나온다. */
+.feature-fx--color .fx-hexlayer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.feature-fx--color .fx-hex {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* 단색 블랙. 헤일로(text-shadow) 없이 간다.
+     금색 배경 #eda600 대비 10:1 로 헤일로 없이도 충분하다. */
+  color: #000000;
+  font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.feature-fx--color .fx-hex.is-on { opacity: 1; }
+
+/* 꽃술 — 광택 구체 */
+.feature-fx--color .fx-flower__core,
+.feature-fx--color .fx-flower-back__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.feature-fx--color .fx-flower__core {
+  width: 40px;
+  height: 40px;
+  background:
+    radial-gradient(circle at 33% 26%, #fff9d2 0 8%, rgba(255, 249, 210, 0) 34%),
+    radial-gradient(circle at 42% 37%, #f7c93f, #d68f0d 66%, #9d6200 100%);
+  box-shadow:
+    inset -6px -8px 13px rgba(105, 60, 0, .46),
+    inset 3px 4px 9px rgba(255, 240, 170, .34);
+}
+
+.feature-fx--color .fx-flower-back__core {
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle at 38% 30%, #c1a44f, #7d6522 72%);
+  box-shadow: inset -4px -5px 9px rgba(0, 0, 0, .4);
+}
+
+/* ── 인터랙션: 기존과 동일 ── 한 꽃잎만 방사 방향으로 13px, HEX 노출 */
+@media (hover: hover) {
+  .feature-fx--color.is-active .fx-petal:hover {
+    z-index: 4;
+    filter: brightness(1.05);
+    transform: translate(-50%, -100%) rotate(var(--r)) translateY(-13px);
+  }
+}
+
+.feature-fx--color.is-active .fx-petal:focus-visible {
+  z-index: 4;
+  transform: translate(-50%, -100%) rotate(var(--r)) translateY(-13px);
+}
+
+
+/* ── 개화 애니메이션 ────────────────────────────────────
+   아래에서 줄기가 자라 올라오고, 그 끝에서 꽃술이 맺힌 뒤
+   꽃잎이 밑동부터 차례로 펼쳐진다.
+
+   · 줄기: pathLength="1" 로 정규화하고 dashoffset 을 -1 → 0 으로.
+     음수 오프셋이라 path 의 "끝"(= 화면 아래)부터 그려진다.
+   · 꽃잎: transform-origin 이 밑동(50% 100%)이라 scale 만으로
+     중심에서 바깥으로 펴지는 움직임이 나온다.
+   · fill-mode 는 backwards 만 쓴다.
+     - forwards 를 쓰면 애니메이션이 끝난 뒤에도 transform 을 점유해
+       호버(13px 분리)가 먹지 않는다. 끝값이 기본 CSS 와 같으므로 불필요하다.
+     - 반대로 backwards 가 없으면 delay 구간(최대 1.3s) 동안 기본값,
+       즉 "이미 활짝 핀 꽃"이 보이다가 시작 순간 툭 튄다.
+   · .is-active 에서만 돈다 — 비활성 카드에서는 완성된 꽃이 정지해 있다. */
+
+.feature-fx--color .fx-stem-base,
+.feature-fx--color .fx-stem-lit {
+  stroke-dasharray: 1;
+}
+
+.feature-fx--color.is-active .fx-stem-base,
+.feature-fx--color.is-active .fx-stem-lit {
+  animation: ffx-color-stem 900ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* 뒤 꽃 줄기가 조금 먼저 올라온다 */
+.feature-fx--color.is-active .fx-stems path:nth-child(1),
+.feature-fx--color.is-active .fx-stems path:nth-child(2) {
+  animation-duration: 760ms;
+}
+
+.feature-fx--color.is-active .fx-flower-back__core {
+  animation: ffx-color-core 320ms cubic-bezier(.34, 1.56, .64, 1) 640ms backwards;
+}
+
+.feature-fx--color.is-active .fx-petal-back {
+  animation: ffx-color-petal 460ms cubic-bezier(.34, 1.4, .64, 1)
+             calc(720ms + var(--i, 0) * 60ms) backwards;
+}
+
+.feature-fx--color.is-active .fx-flower__core {
+  animation: ffx-color-core 340ms cubic-bezier(.34, 1.56, .64, 1) 820ms backwards;
+}
+
+.feature-fx--color.is-active .fx-petal {
+  animation: ffx-color-petal 520ms cubic-bezier(.34, 1.4, .64, 1)
+             calc(900ms + var(--i, 0) * 80ms) backwards;
+}
+
+@keyframes ffx-color-stem {
+  from { stroke-dashoffset: -1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes ffx-color-core {
+  from { transform: translate(-50%, -50%) scale(0); }
+  70%  { transform: translate(-50%, -50%) scale(1.14); }
+  to   { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes ffx-color-petal {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%) rotate(var(--r)) scale(.12);
+  }
+  55% { opacity: 1; }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) rotate(var(--r)) scale(1);
+  }
+}
+
+/* ====================== UI ===================== */
+.feature-fx--ui {
+  background:
+    radial-gradient(circle at 76% 15%, rgba(111,126,255,.22), transparent 30%),
+    linear-gradient(145deg, #e8ebee, #cbd2d8 55%, #aab4bd);
+  color: #121416;
+}
+
+.feature-fx--ui .fx-ui-object {
+  position: absolute;
+  z-index: 2;
+  padding: 11px 12px;
+  border: 1px solid rgba(15,20,24,.11);
+  border-radius: 14px;
+  background: rgba(250,250,248,.9);
+  box-shadow: 0 14px 30px rgba(31,42,50,.13);
+  backdrop-filter: blur(10px);
+  transition: transform 420ms var(--fx-ease), box-shadow 240ms ease;
+}
+
+.feature-fx--ui .fx-ui-object > small {
+  display: block;
+  margin-bottom: 8px;
+  color: #747b81;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.feature-fx--ui .fx-ui-switch-object { left: 9%; top: 14%; transform: rotate(-4deg); }
+.feature-fx--ui .fx-ui-tabs-object { right: 8%; top: 12%; transform: rotate(3deg); }
+.feature-fx--ui .fx-ui-chip-object { left: 12%; top: 46%; width: 53%; transform: rotate(1.5deg); }
+.feature-fx--ui .fx-ui-slider-object { right: 7%; bottom: 10%; width: 49%; transform: rotate(-2deg); }
+.feature-fx--ui .fx-ui-stepper-object { left: 8%; bottom: 9%; transform: rotate(2deg); }
+
+.feature-fx--ui.is-active .fx-ui-object:hover { box-shadow: 0 18px 34px rgba(31,42,50,.18); }
+.feature-fx--ui.is-active .fx-ui-switch-object:hover { transform: translateY(-4px) rotate(-4deg); }
+.feature-fx--ui.is-active .fx-ui-tabs-object:hover { transform: translateY(-4px) rotate(3deg); }
+.feature-fx--ui.is-active .fx-ui-chip-object:hover { transform: translateY(-4px) rotate(1.5deg); }
+.feature-fx--ui.is-active .fx-ui-slider-object:hover { transform: translateY(-4px) rotate(-2deg); }
+.feature-fx--ui.is-active .fx-ui-stepper-object:hover { transform: translateY(-4px) rotate(2deg); }
+
+.feature-fx--ui .fx-ui-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c8ced2;
+  cursor: pointer;
+  transition: background 220ms ease;
+}
+
+.feature-fx--ui .fx-ui-switch span {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,.18);
+  transition: transform 280ms var(--fx-ease);
+}
+
+.feature-fx--ui .fx-ui-switch[aria-pressed="true"] { background: #2226df; }
+.feature-fx--ui .fx-ui-switch[aria-pressed="true"] span { transform: translateX(20px); }
+
+.feature-fx--ui .fx-ui-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #e4e7e9;
+}
+
+.feature-fx--ui .fx-ui-tab {
+  min-width: 28px;
+  height: 27px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #777e83;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.feature-fx--ui .fx-ui-tab.is-selected {
+  background: #fff;
+  color: #121416;
+  box-shadow: 0 2px 7px rgba(0,0,0,.1);
+}
+
+.feature-fx--ui .fx-ui-chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.feature-fx--ui .fx-ui-chip {
+  min-height: 25px;
+  padding: 0 9px;
+  border: 1px solid #d6dade;
+  border-radius: 999px;
+  background: #fff;
+  color: #555d63;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.feature-fx--ui .fx-ui-chip.is-selected {
+  border-color: #121416;
+  background: #121416;
+  color: #fff;
+}
+
+.feature-fx--ui .fx-ui-slider-row { display: flex; align-items: center; gap: 8px; }
+.feature-fx--ui .fx-ui-slider { width: 100%; accent-color: #2226df; cursor: pointer; }
+
+.feature-fx--ui .fx-ui-slider-value,
+.feature-fx--ui .fx-ui-stepper-value {
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.feature-fx--ui .fx-ui-stepper {
+  display: grid;
+  grid-template-columns: 27px 32px 27px;
+  align-items: center;
+  text-align: center;
+}
+
+.feature-fx--ui .fx-ui-stepper button {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid #d6dade;
+  border-radius: 8px;
+  background: #fff;
+  color: #121416;
+  cursor: pointer;
+}
+
+/* ==================== PHOTO ==================== */
+.feature-fx--photo {
+  --fx-photo-x: 50%;
+  --fx-photo-y: 50%;
+  --fx-photo-ring-opacity: 0;
+  background: #171918;
+  cursor: crosshair;
+}
+
+.feature-fx--photo .fx-photo-base,
+.feature-fx--photo .fx-photo-reveal {
+  position: absolute;
+  inset: 0;
+  background-image: var(--photo-image);
+  background-position: center;
+  background-size: cover;
+}
+
+.feature-fx--photo .fx-photo-base {
+  filter: grayscale(1) saturate(.15) contrast(1.06) brightness(.72);
+  transform: scale(1.015);
+}
+
+.feature-fx--photo .fx-photo-reveal {
+  filter: saturate(1.04) contrast(1.02);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  -webkit-mask-image: radial-gradient(
+    circle 112px at var(--fx-photo-x) var(--fx-photo-y),
+    #000 0 54%, rgba(0,0,0,.75) 70%, transparent 100%);
+  mask-image: radial-gradient(
+    circle 112px at var(--fx-photo-x) var(--fx-photo-y),
+    #000 0 54%, rgba(0,0,0,.75) 70%, transparent 100%);
+}
+
+.feature-fx--photo.is-active .fx-photo-reveal { opacity: .98; }
+
+.feature-fx--photo .fx-photo-ring {
+  position: absolute;
+  left: var(--fx-photo-x);
+  top: var(--fx-photo-y);
+  width: 176px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 50%;
+  opacity: var(--fx-photo-ring-opacity);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 180ms ease;
+}
+
+/* ===================== FONT ==================== */
+/* 프로젝트 키는 "type"(라벨 TYPE). 효과 클래스명은 문서대로 --font 를 쓴다.
+   --fx-serif 는 이미 로드된 Instrument Serif 로 연결했다. */
+.feature-fx--font {
+  --fx-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  display: grid;
+  place-items: center;
+  background: #ece8de;
+  color: #111;
+}
+
+.feature-fx--font .fx-font-stage {
+  position: absolute;
+  inset: 5% 0 17%;
+  display: grid;
+  place-items: center;
+}
+
+.feature-fx--font .fx-font-face {
+  position: absolute;
+  font-size: 144px;
+  line-height: .82;
+  letter-spacing: -.09em;
+  opacity: 0;
+  transform: translateY(14px) rotate(.01deg);
+  will-change: opacity, transform, filter;
+}
+
+.feature-fx--font .fx-font-sans {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  opacity: 1;
+  transform: none;
+}
+
+.feature-fx--font .fx-font-serif {
+  font-family: var(--fx-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.feature-fx--font .fx-font-mono {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 700;
+  letter-spacing: -.12em;
+}
+
+.feature-fx--font.is-active .fx-font-sans { animation: ffx-font-sans 7.2s ease-in-out infinite; }
+.feature-fx--font.is-active .fx-font-serif { animation: ffx-font-serif 7.2s ease-in-out infinite; }
+.feature-fx--font.is-active .fx-font-mono { animation: ffx-font-mono 7.2s ease-in-out infinite; }
+
+.feature-fx--font .fx-font-specimen {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 9%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(17,17,17,.48);
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+}
+
+@keyframes ffx-font-sans {
+  0%, 28% { opacity: 1; filter: blur(0); transform: translateY(0); }
+  34%, 94% { opacity: 0; filter: blur(5px); transform: translateY(-14px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+@keyframes ffx-font-serif {
+  0%, 29% { opacity: 0; filter: blur(5px); transform: translateY(14px); }
+  35%, 61% { opacity: 1; filter: blur(0); transform: translateY(0); }
+  67%, 100% { opacity: 0; filter: blur(5px); transform: translateY(-14px); }
+}
+
+@keyframes ffx-font-mono {
+  0%, 62% { opacity: 0; filter: blur(5px); transform: translateY(14px); }
+  68%, 94% { opacity: 1; filter: blur(0); transform: translateY(0); }
+  100% { opacity: 0; filter: blur(5px); transform: translateY(-14px); }
+}
+
+/* ==================== MOTION =================== */
+.feature-fx--motion {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 72% 24%, rgba(168,108,255,.72), transparent 29%),
+    linear-gradient(145deg, #43196a, #17111d 72%);
+}
+
+.feature-fx--motion .fx-motion-canvas {
+  position: relative;
+  width: min(92%, 460px);
+  aspect-ratio: 460 / 330;
+}
+
+.feature-fx--motion .fx-motion-curve {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.feature-fx--motion .fx-motion-curve path {
+  fill: none;
+  stroke: rgba(255,255,255,.34);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 3 8;
+}
+
+.feature-fx--motion .fx-motion-curve circle { fill: rgba(255,255,255,.52); }
+
+.feature-fx--motion .fx-motion-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  offset-path: path("M45 270 C80 75, 300 300, 400 95");
+  offset-rotate: 0deg;
+  box-shadow: 0 0 18px rgba(255,255,255,.45);
+  transform: translate(-50%, -50%);
+}
+
+.feature-fx--motion .fx-motion-main {
+  width: 17px;
+  height: 17px;
+  box-shadow: 0 0 0 7px rgba(255,255,255,.08), 0 0 30px rgba(255,255,255,.66);
+}
+
+.feature-fx--motion .fx-trail-1 { opacity: .52; }
+.feature-fx--motion .fx-trail-2 { opacity: .3; }
+.feature-fx--motion .fx-trail-3 { opacity: .14; }
+
+.feature-fx--motion.is-active .fx-motion-dot {
+  animation: ffx-motion-curve 3.4s cubic-bezier(.65, 0, .22, 1) infinite;
+}
+
+.feature-fx--motion.is-active .fx-motion-main { animation-delay: 0s; }
+.feature-fx--motion.is-active .fx-trail-1 { animation-delay: -.11s; }
+.feature-fx--motion.is-active .fx-trail-2 { animation-delay: -.22s; }
+.feature-fx--motion.is-active .fx-trail-3 { animation-delay: -.33s; }
+
+@keyframes ffx-motion-curve {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+/* =================== GRAPHIC =================== */
+.feature-fx--graphic {
+  --fx-gx: 0;
+  --fx-gy: 0;
+  background: #ece8df;
+  color: #111;
+}
+
+.feature-fx--graphic .fx-graphic-grid {
+  position: absolute;
+  inset: 0;
+  opacity: .2;
+  background-image:
+    linear-gradient(rgba(17,17,17,.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,17,17,.6) 1px, transparent 1px);
+  background-size: 34px 34px;
+  transform: translate(calc(var(--fx-gx) * -2px), calc(var(--fx-gy) * -2px));
+}
+
+.feature-fx--graphic .fx-graphic-blue,
+.feature-fx--graphic .fx-graphic-red,
+.feature-fx--graphic .fx-graphic-circle,
+.feature-fx--graphic .fx-graphic-type,
+.feature-fx--graphic .fx-graphic-meta {
+  position: absolute;
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.feature-fx--graphic .fx-graphic-blue {
+  left: 8%;
+  top: 11%;
+  width: 54%;
+  height: 46%;
+  background: #1457ff;
+  transform: translate(calc(var(--fx-gx) * -8px), calc(var(--fx-gy) * -8px)) rotate(-8deg);
+}
+
+.feature-fx--graphic .fx-graphic-red {
+  right: 9%;
+  bottom: 7%;
+  width: 37%;
+  height: 62%;
+  background: #ff4b37;
+  transform: translate(calc(var(--fx-gx) * 7px), calc(var(--fx-gy) * 7px)) rotate(7deg);
+}
+
+.feature-fx--graphic .fx-graphic-circle {
+  left: 42%;
+  top: 30%;
+  width: clamp(100px, 31%, 150px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #e7ff39;
+  mix-blend-mode: multiply;
+  transform: translate(calc(var(--fx-gx) * 11px), calc(var(--fx-gy) * -10px));
+}
+
+.feature-fx--graphic .fx-graphic-type {
+  left: 10%;
+  top: 18%;
+  z-index: 5;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 54px;
+  font-weight: 900;
+  line-height: .8;
+  letter-spacing: -.08em;
+  mix-blend-mode: difference;
+  transform: translate(calc(var(--fx-gx) * 4px), calc(var(--fx-gy) * 4px));
+}
+
+.feature-fx--graphic .fx-graphic-meta {
+  left: 9%;
+  bottom: 8%;
+  z-index: 6;
+  font: 700 8px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .09em;
+  transform: translate(calc(var(--fx-gx) * -3px), calc(var(--fx-gy) * 3px));
+}
+
+/* ===================== ICON ==================== */
+.feature-fx--icon {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.98), transparent 42%),
+    #eeece6;
+}
+
+.feature-fx--icon .fx-icon-dock {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  background: #111;
+  box-shadow: 0 18px 34px rgba(0,0,0,.2);
+}
+
+.feature-fx--icon .fx-icon {
+  --fx-icon-lift: 0px;
+  --fx-icon-scale: 1;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+  transform: translateY(var(--fx-icon-lift)) scale(var(--fx-icon-scale));
+  transform-origin: 50% 100%;
+  transition: transform 260ms var(--fx-ease), background 180ms ease;
+}
+
+.feature-fx--icon .fx-icon:hover { background: #f1f0eb; }
+
+.feature-fx--icon .fx-icon svg {
+  width: 45%;
+  height: 45%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ===================== CODE ==================== */
+.feature-fx--code {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 0, rgba(72,108,88,.33), transparent 44%),
+    #080b09;
+}
+
+.feature-fx--code .fx-terminal {
+  position: relative;
+  width: min(78%, 360px);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 15px;
+  background: rgba(7,10,8,.94);
+  box-shadow: 0 22px 42px rgba(0,0,0,.34);
+}
+
+.feature-fx--code .fx-terminal-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 11px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.feature-fx--code .fx-terminal-top span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #667169;
+}
+
+.feature-fx--code .fx-terminal-top b {
+  margin-left: auto;
+  color: #69736d;
+  font: 600 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .04em;
+}
+
+.feature-fx--code .fx-terminal-body {
+  min-height: 144px;
+  padding: 20px;
+  color: #cbd4ce;
+  font: 500 10px/1.9 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.feature-fx--code .fx-code-line {
+  opacity: .08;
+  transform: translateY(7px);
+}
+
+.feature-fx--code .fx-code-line i { color: #df8eff; font-style: normal; }
+.feature-fx--code .fx-code-line em { color: #79b8ff; font-style: normal; }
+.feature-fx--code .fx-code-line strong { color: #91e6b5; font-weight: 600; }
+.feature-fx--code .fx-code-line u { color: #f5d580; text-decoration: none; }
+.feature-fx--code .fx-comment { color: #657169; }
+
+.feature-fx--code .fx-code-caret {
+  width: 7px;
+  height: 13px;
+  margin-top: 4px;
+  background: #91e6b5;
+  opacity: .16;
+}
+
+.feature-fx--code .fx-code-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30%;
+  height: 38%;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(145,230,181,.055), transparent);
+}
+
+.feature-fx--code.is-active .fx-code-line { animation: ffx-code-line 420ms forwards; }
+.feature-fx--code.is-active .fx-code-line:nth-child(2) { animation-delay: 160ms; }
+.feature-fx--code.is-active .fx-code-line:nth-child(3) { animation-delay: 320ms; }
+.feature-fx--code.is-active .fx-code-line:nth-child(4) { animation-delay: 480ms; }
+
+.feature-fx--code.is-active .fx-code-caret {
+  opacity: 1;
+  animation: ffx-code-caret 820ms steps(1) 620ms infinite;
+}
+
+.feature-fx--code.is-active .fx-code-scan {
+  animation: ffx-code-scan 4.8s 900ms ease-in-out infinite;
+}
+
+@keyframes ffx-code-line { to { opacity: 1; transform: translateY(0); } }
+@keyframes ffx-code-caret { 50% { opacity: 0; } }
+
+@keyframes ffx-code-scan {
+  0% { opacity: 0; transform: translateY(0); }
+  18% { opacity: 1; }
+  55% { opacity: .55; }
+  100% { opacity: 0; transform: translateY(350%); }
+}
+
+/* ====================== WEB ==================== */
+.feature-fx--web {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(90,190,191,.4), transparent 32%),
+    linear-gradient(145deg, #4d8d92, #0c2944 60%, #081426);
+}
+
+.feature-fx--web .fx-web-window {
+  position: absolute;
+  left: 17.5%;
+  top: 21%;
+  width: 65%;
+  height: 56%;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.46);
+  border-radius: 14px;
+  background: #f5f4ef;
+  box-shadow: 0 22px 45px rgba(0,0,0,.3);
+  will-change: transform;
+}
+
+.feature-fx--web .fx-web-window-3 {
+  opacity: .38;
+  transform: translate(-48px, -22px) rotate(-7deg) scale(.87);
+}
+
+.feature-fx--web .fx-web-window-2 {
+  opacity: .64;
+  transform: translate(48px, -12px) rotate(6deg) scale(.92);
+}
+
+.feature-fx--web .fx-web-window-1 { z-index: 3; }
+
+.feature-fx--web .fx-web-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-bottom: 1px solid #d3d1cb;
+  background: #e8e7e2;
+}
+
+.feature-fx--web .fx-web-bar span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #9a9994;
+}
+
+.feature-fx--web .fx-web-bar b {
+  margin-left: auto;
+  color: #8a8984;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.feature-fx--web .fx-web-main { padding: 12px; }
+
+.feature-fx--web .fx-web-nav {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.feature-fx--web .fx-web-nav i {
+  display: block;
+  width: 25px;
+  height: 4px;
+  border-radius: 99px;
+  background: #ceccc5;
+}
+
+.feature-fx--web .fx-web-hero {
+  height: 54px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 75% 25%, #b9ff5b 0 10%, transparent 11%),
+    linear-gradient(120deg, #151515, #515151);
+}
+
+.feature-fx--web .fx-web-grid,
+.feature-fx--web .fx-web-placeholder {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  padding: 9px 12px 0;
+}
+
+.feature-fx--web .fx-web-grid { padding-inline: 0; }
+
+.feature-fx--web .fx-web-grid i,
+.feature-fx--web .fx-web-placeholder i {
+  display: block;
+  height: 43px;
+  border-radius: 6px;
+  background: #d8d6ce;
+}
+
+.feature-fx--web .fx-web-placeholder i:nth-child(2) { background: #c5d6d5; }
+.feature-fx--web .fx-web-placeholder i:nth-child(3) { background: #d7cfbf; }
+
+.feature-fx--web.is-active .fx-web-window-1 { animation: ffx-web-front 5.8s ease-in-out infinite; }
+.feature-fx--web.is-active .fx-web-window-2 { animation: ffx-web-right 5.8s ease-in-out infinite; }
+.feature-fx--web.is-active .fx-web-window-3 { animation: ffx-web-left 5.8s ease-in-out infinite; }
+
+@keyframes ffx-web-front { 50% { transform: translateY(-7px); } }
+@keyframes ffx-web-right { 50% { transform: translate(59px, -20px) rotate(8.5deg) scale(.9); } }
+@keyframes ffx-web-left { 50% { transform: translate(-59px, -15px) rotate(-9deg) scale(.86); } }
+
+/* ============== Internal responsiveness ============== */
+@media (max-width: 620px) {
+  .feature-fx--color .fx-flower { width: min(62%, 220px); }
+
+  .feature-fx--ui .fx-ui-object { padding: 8px 9px; border-radius: 11px; }
+  .feature-fx--ui .fx-ui-chip-object { width: 58%; }
+  .feature-fx--ui .fx-ui-slider-object { width: 52%; }
+  .feature-fx--ui .fx-ui-chip:nth-child(4) { display: none; }
+
+  .feature-fx--icon .fx-icon-dock { gap: 5px; padding: 8px; }
+
+  .feature-fx--web .fx-web-window { left: 15%; width: 70%; }
+}
+
+/* Container-query fallback: affects internals only */
+@supports (container-type: inline-size) {
+  .feature-fx { container-type: inline-size; }
+
+  .feature-fx--font .fx-font-face { font-size: clamp(96px, 33cqw, 168px); }
+  .feature-fx--graphic .fx-graphic-type { font-size: clamp(36px, 12cqw, 60px); }
+  .feature-fx--icon .fx-icon { width: clamp(42px, 11cqw, 54px); }
+  .feature-fx--code .fx-terminal-body { font-size: clamp(9px, 2.6cqw, 11px); }
+
+  @container (max-width: 360px) {
+    .feature-fx--ui .fx-ui-object > small { display: none; }
+    .feature-fx--ui .fx-ui-chip-object { top: 44%; }
+    .feature-fx--icon .fx-icon-dock { transform: scale(.88); }
+    .feature-fx--web .fx-web-window { height: 58%; }
+  }
+}
+
+/* ============== Accessibility ============== */
+@media (prefers-reduced-motion: reduce) {
+  .feature-fx *,
+  .feature-fx *::before,
+  .feature-fx *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .feature-fx--font .fx-font-sans { opacity: 1; filter: none; transform: none; }
+  .feature-fx--font .fx-font-serif,
+  .feature-fx--font .fx-font-mono { opacity: 0; }
+
+  .feature-fx--motion .fx-motion-main { opacity: 1; offset-distance: 58%; }
+}
+
+
+/* ══ 통합 조정 — 기존 카드 라벨과의 충돌 회피 ═══════════════
+   .cfTitleBox 는 left:22px / bottom:24px 에 있고, 라벨 잉크는
+   대략 x 22~115, y 338~380 (500x400 카드 기준)을 차지한다.
+   문서 CSS 의 하단 요소 3개가 이 영역과 겹쳐 실측으로 확인됐다.
+
+     UI      .fx-ui-stepper-object   40,294 112x70
+     GRAPHIC .fx-graphic-meta        45,346  92x22
+     TYPE    .fx-font-specimen       40,356 420x8
+
+   라벨은 규칙상 건드릴 수 없으므로 fx 내부 요소만 비켜 놓는다.
+   위치만 옮기고 각 Feature 의 표현·인터랙션 사양은 그대로다. */
+
+/* 스테퍼를 라벨 위로 올린다 (슬라이더가 오른쪽이라 우측 이동은 불가) */
+.feature-fx--ui .fx-ui-stepper-object { bottom: 19%; }
+
+/* 메타 텍스트를 라벨 위로 올린다 */
+.feature-fx--graphic .fx-graphic-meta { bottom: 20%; }
+
+/* 스펙시먼 행은 라벨 오른쪽에서 시작하게 해, 라벨과 같은 baseline 을 공유시킨다 */
+.feature-fx--font .fx-font-specimen { left: 32%; }
+
+  /* ══ GRAPHIC — 손이 카드 뒤에서 기어올라와 잡고, 무게로 카드가 내려앉는다 ══
+
+     ── 에셋 ──
+     원본 hand.png 에는 손바닥이 없다. 그래서 손을 움직이면 평평하게 잘린 선
+     (y=369, 높이의 42.3%)이 드러났다. 그 선에서 두 장으로 잘랐다.
+       hand-knuckles.png  손등 마디 + 엄지   → 카드 "뒤" (z −2px)
+       hand-fingers.png   손가락 몸통 + 손톱 → 카드 "앞" (z +2px)
+     뒤 레이어의 잘린 선은 카드 상단 아래로 내려가 있는 동안 카드에 실제로
+     가려진다(preserve-3d 깊이 정렬). 기어오를 때 잘린 면이 보이지 않는다.
+
+     ── 리그(.cfGrab) ──
+     카드는 overflow:hidden 이라 손을 카드 안에 넣을 수 없다. 대신 활성 카드와
+     같은 박스(500x400, 트랙 중심)를 트랙에 하나 더 두고 그 안에 레이어를 놓는다.
+     활성 카드의 캐러셀 변환은 translate(-50%,-50%) 뿐이라 리그와 좌표가 같고,
+     카드가 내려앉을 때 같은 변환을 걸면 손이 그대로 붙어 따라간다.
+
+     ── 위치(카드 좌표) ──
+     손 폭 574px, 왼쪽 −37px — 손가락 범위가 카드 폭 28~87%(레퍼런스와 동일).
+     knuckles 의 아랫변 = 카드 상단(bottom:100%), fingers 의 윗변 = 카드 상단.
+
+     ── 3D 주의 ──
+     filter 는 preserve-3d 를 평면화한다. 변환은 레이어 div, 그림자는 안쪽 img. */
+  .cfGrab {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 500px;
+    height: 400px;
+    transform: translate(-50%, -50%);
+    transform-style: preserve-3d;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .cfGrab__knuckles,
+  .cfGrab__fingers {
+    position: absolute;
+    left: -37px;
+    width: 574px;
+    backface-visibility: hidden;
+    will-change: transform;
+  }
+
+  .cfGrab__knuckles {
+    bottom: 100%;
+    transform: translateZ(-2px) translateY(80px);   /* 시작: 카드 뒤에 숨어 있음 */
+  }
+
+  .cfGrab__fingers {
+    /* 원본 2px 겹침만큼 올린다 — 경계 헤어라인 방지 */
+    top: calc(574px * -2 / 1308);
+    transform-origin: 50% 0;                         /* 카드 상단 모서리가 경첩 */
+    transform: translateZ(2px) rotateX(100deg);      /* 시작: 뒤로 젖혀져 안 보임 */
+  }
+
+  .cfGrab img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 16px 22px rgba(0, 0, 0, .42));
+  }
 </style>
 </head>
 <body>
 
 <img class="logo" id="logo" src="/gleora-logo.svg" alt="Gleora" />
-
-<div class="hitWrap">
-  <button class="hitBtn" id="hitBtn" aria-label="Hit me !">
-    <span class="hitStage" id="hitStage">
-      <p class="hitLabel hitBase">Hit me !</p>
-      <span class="hitFillLayer" id="hitFillLayer" style="clip-path: inset(100% 0 0 0)">
-        <p class="hitLabel hitFill" id="hitFillText">Hit me !</p>
-      </span>
-    </span>
-  </button>
-</div>
+<div class="logoGlint" aria-hidden="true"></div>
 
 <div class="cfRoot" id="cfRoot" tabindex="0" role="group" aria-roledescription="carousel">
   <div class="cfTrack" id="cfTrack"></div>
@@ -357,6 +1531,256 @@ let active = 0;
 track.style.width = PROPS.cardWidth + "px";
 track.style.height = PROPS.cardHeight + "px";
 
+
+/* ═══════════════════════════════════════════════════════════
+   Feature Card 내부 효과 (.feature-fx) — 전달 문서 3·5절
+   기존 카드 크기·배치·carousel·라벨·클릭 로직은 건드리지 않는다.
+   각 카드의 visual 영역(.cfFill 위)에 .feature-fx 하나만 얹는다.
+
+   ── 프로젝트 매핑 ──
+   문서의 "Font" 는 이 프로젝트에서 key "type" / 라벨 TYPE 이다.
+   라벨은 그대로 두고 효과만 feature-fx--font 로 붙인다.
+   ═══════════════════════════════════════════════════════════ */
+
+// PHOTO 자리표시자 — 프로젝트에 사진 자산이 없어 임시로 생성한 것.
+// 실제 사진이 생기면 아래 FX_PHOTO_SRC 한 줄만 "url('/경로.jpg')" 로 바꾸면 된다.
+// base(흑백)와 reveal(컬러) 레이어가 같은 이미지를 공유하므로 자산은 하나면 된다.
+const FX_PHOTO_SRC = "url(\"data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">' +
+  '<defs>' +
+  '<radialGradient id="a" cx="26%" cy="28%" r="52%"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>' +
+  '<radialGradient id="b" cx="74%" cy="22%" r="46%"><stop offset="0" stop-color="#ff5b6e"/><stop offset="1" stop-color="#ff5b6e" stop-opacity="0"/></radialGradient>' +
+  '<radialGradient id="c" cx="62%" cy="76%" r="58%"><stop offset="0" stop-color="#2f7fd8"/><stop offset="1" stop-color="#2f7fd8" stop-opacity="0"/></radialGradient>' +
+  '<radialGradient id="d" cx="18%" cy="82%" r="48%"><stop offset="0" stop-color="#3ecf9a"/><stop offset="1" stop-color="#3ecf9a" stop-opacity="0"/></radialGradient>' +
+  '<filter id="s"><feGaussianBlur stdDeviation="34"/></filter>' +
+  '</defs>' +
+  '<rect width="800" height="600" fill="#4a3b52"/>' +
+  '<g filter="url(#s)">' +
+  '<rect width="800" height="600" fill="url(#a)"/>' +
+  '<rect width="800" height="600" fill="url(#b)"/>' +
+  '<rect width="800" height="600" fill="url(#c)"/>' +
+  '<rect width="800" height="600" fill="url(#d)"/>' +
+  '</g></svg>'
+) + "\")";
+
+const FX_MARKUP = {
+  color: (() => {
+    // 꽃잎 실루엣 — 밑동(24,96)에서 끝(24,2)으로, 위쪽 55% 지점이 가장 넓다.
+    // border-radius 로는 못 만드는 스푼 형태라 path 로 그린다.
+    const PETAL = "M24 96 C18 84 4 66 4 44 C4 18 14 2 24 2 C34 2 44 18 44 44 C44 66 30 84 24 96 Z";
+
+    // 기본은 화이트 배리에이션. 한 장만 요청 색(#B9F97A).
+    //   [각도, 표시 HEX, 밝은쪽, 그늘쪽]
+    const PETALS = [
+      [0,   "#FFFFFF", "#FFFFFF", "#CBC5B8"],
+      [60,  "#FAF6EC", "#FFFDF7", "#C2BBAB"],
+      [120, "#F2EEE3", "#FCFAF3", "#B9B2A2"],
+      [180, "#7EE01D", "#B4F566", "#3F8A0C"],
+      [240, "#FDFAF2", "#FFFFFF", "#C7C1B3"],
+      [300, "#EDE9DC", "#F9F6EE", "#B2AB9B"],
+    ];
+
+    // 빛은 화면 좌상단 한 곳에서 온다. 꽃잎이 --r 만큼 돌아가 있으므로
+    // 그라디언트를 -r 만큼 되돌려야 광원 방향이 전 꽃잎에서 일치한다.
+    const petal = (i, r, hex, lit, shade) => `
+      <button class="fx-petal" type="button" style="--r: ${r}deg; --i: ${i}"
+        data-hex="${hex}" aria-label="Color ${hex}">
+        <svg viewBox="0 0 48 96" aria-hidden="true">
+          <defs>
+            <linearGradient id="fxp${i}" x1="0" y1="0.1" x2="1" y2="0.9"
+              gradientTransform="rotate(${-r} 0.5 0.5)">
+              <stop offset="0" stop-color="${lit}" />
+              <stop offset="0.44" stop-color="${hex}" />
+              <stop offset="1" stop-color="${shade}" />
+            </linearGradient>
+            <radialGradient id="fxo${i}" cx="0.5" cy="1" r="0.66">
+              <stop offset="0" stop-color="#5a4a2a" stop-opacity="0.38" />
+              <stop offset="1" stop-color="#5a4a2a" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <path d="${PETAL}" fill="url(#fxp${i})" />
+          <path d="${PETAL}" fill="url(#fxo${i})" />
+        </svg>
+      </button>`;
+
+    const backPetal = (i, r) => `
+      <div class="fx-petal-back" style="--r: ${r}deg; --i: ${i}">
+        <svg viewBox="0 0 48 96" aria-hidden="true">
+          <defs>
+            <linearGradient id="fxb${i}" x1="0" y1="0.1" x2="1" y2="0.9"
+              gradientTransform="rotate(${-r} 0.5 0.5)">
+              <stop offset="0" stop-color="#a1966f" />
+              <stop offset="0.44" stop-color="#867c58" />
+              <stop offset="1" stop-color="#554e35" />
+            </linearGradient>
+          </defs>
+          <path d="${PETAL}" fill="url(#fxb${i})" />
+        </svg>
+      </div>`;
+
+    return `
+    <!-- 줄기 — 꽃술 중심 (222,138) / (306,186) 에 물리고 아래에서 교차한다 -->
+    <svg class="fx-stems" viewBox="0 0 500 400" preserveAspectRatio="none" aria-hidden="true">
+      <path class="fx-stem-base" pathLength="1" d="M301 194 C307 258, 281 308, 241 360" />
+      <path class="fx-stem-lit"  pathLength="1" d="M299 194 C305 258, 279 308, 239 360" />
+      <path class="fx-stem-base" pathLength="1" d="M217 146 C209 234, 227 308, 259 360" />
+      <path class="fx-stem-lit"  pathLength="1" d="M215 146 C207 234, 225 308, 257 360" />
+    </svg>
+
+    <div class="fx-flower-back" aria-hidden="true">
+      ${[0, 60, 120, 180, 240, 300].map((r, i) => backPetal(i, r)).join("")}
+      <div class="fx-flower-back__core"></div>
+    </div>
+
+    <div class="fx-flower" aria-label="Interactive color palette">
+      ${PETALS.map(([r, hex, lit, shade], i) => petal(i, r, hex, lit, shade)).join("")}
+      <div class="fx-flower__core" aria-hidden="true"></div>
+    </div>
+
+    <!-- HEX 라벨 — 3D 밖 평면. 위치는 initColor 가 잡는다.
+         버튼의 aria-label 이 접근성 정보를 이미 담고 있어 장식으로 둔다. -->
+    <div class="fx-hexlayer" aria-hidden="true"><span class="fx-hex"></span></div>`;
+  })(),
+
+  ui: `
+    <div class="fx-ui-object fx-ui-switch-object">
+      <small>SWITCH</small>
+      <button class="fx-ui-switch" type="button" aria-label="Toggle option" aria-pressed="false"><span></span></button>
+    </div>
+    <div class="fx-ui-object fx-ui-tabs-object">
+      <small>SEGMENT</small>
+      <div class="fx-ui-tabs" role="group" aria-label="View mode">
+        <button type="button" class="fx-ui-tab is-selected" aria-pressed="true">A</button>
+        <button type="button" class="fx-ui-tab" aria-pressed="false">B</button>
+        <button type="button" class="fx-ui-tab" aria-pressed="false">C</button>
+      </div>
+    </div>
+    <div class="fx-ui-object fx-ui-chip-object">
+      <small>FILTER</small>
+      <div class="fx-ui-chip-row" role="group" aria-label="Filters">
+        <button type="button" class="fx-ui-chip is-selected" aria-pressed="true">New</button>
+        <button type="button" class="fx-ui-chip" aria-pressed="false">Popular</button>
+        <button type="button" class="fx-ui-chip" aria-pressed="false">Grid</button>
+        <button type="button" class="fx-ui-chip" aria-pressed="false">Saved</button>
+      </div>
+    </div>
+    <div class="fx-ui-object fx-ui-slider-object">
+      <small>SLIDER</small>
+      <div class="fx-ui-slider-row">
+        <input class="fx-ui-slider" type="range" min="0" max="100" value="54" aria-label="Slider value" />
+        <output class="fx-ui-slider-value">54</output>
+      </div>
+    </div>
+    <div class="fx-ui-object fx-ui-stepper-object">
+      <small>STEPPER</small>
+      <div class="fx-ui-stepper">
+        <button type="button" class="fx-ui-minus" aria-label="Decrease">&minus;</button>
+        <output class="fx-ui-stepper-value" aria-live="polite">3</output>
+        <button type="button" class="fx-ui-plus" aria-label="Increase">+</button>
+      </div>
+    </div>`,
+
+  photo: `
+    <div class="fx-photo-base" aria-hidden="true"></div>
+    <div class="fx-photo-reveal" aria-hidden="true"></div>
+    <div class="fx-photo-ring" aria-hidden="true"></div>`,
+
+  font: `
+    <div class="fx-font-stage" aria-label="Sans, editorial serif and monospace type specimen">
+      <span class="fx-font-face fx-font-sans">Aa</span>
+      <span class="fx-font-face fx-font-serif">Aa</span>
+      <span class="fx-font-face fx-font-mono">Aa</span>
+    </div>
+    <div class="fx-font-specimen" aria-hidden="true">
+      <span>SANS</span><span>EDITORIAL SERIF</span><span>MONO</span>
+    </div>`,
+
+  motion: `
+    <div class="fx-motion-canvas" aria-label="Animated easing curve">
+      <svg class="fx-motion-curve" viewBox="0 0 460 330" aria-hidden="true">
+        <path d="M45 270 C80 75, 300 300, 400 95"></path>
+        <circle cx="45" cy="270" r="4"></circle>
+        <circle cx="400" cy="95" r="4"></circle>
+      </svg>
+      <div class="fx-motion-dot fx-trail-3"></div>
+      <div class="fx-motion-dot fx-trail-2"></div>
+      <div class="fx-motion-dot fx-trail-1"></div>
+      <div class="fx-motion-dot fx-motion-main"></div>
+    </div>`,
+
+  graphic: `
+    <div class="fx-graphic-grid" aria-hidden="true"></div>
+    <div class="fx-graphic-blue" aria-hidden="true"></div>
+    <div class="fx-graphic-red" aria-hidden="true"></div>
+    <div class="fx-graphic-circle" aria-hidden="true"></div>
+    <div class="fx-graphic-type">VISUAL<br />SYSTEM</div>
+    <div class="fx-graphic-meta">FORM / TYPE / IMAGE<br />0027&mdash;2026</div>`,
+
+  icon: `
+    <div class="fx-icon-dock" role="toolbar" aria-label="Icon dock">
+      <button class="fx-icon" type="button" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 11.5 12 5l8 6.5V20H5z"></path><path d="M9 20v-6h6v6"></path></svg></button>
+      <button class="fx-icon" type="button" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="5.5"></circle><path d="m15 15 5 5"></path></svg></button>
+      <button class="fx-icon" type="button" aria-label="Star"><svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m12 3 2.8 5.7 6.2.9-4.5 4.3 1.1 6.1-5.6-2.9L6.4 20l1.1-6.1L3 9.6l6.2-.9z"></path></svg></button>
+      <button class="fx-icon" type="button" aria-label="User"><svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.8-4 3.2-6 6.5-6s5.7 2 6.5 6"></path></svg></button>
+      <button class="fx-icon" type="button" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"></path></svg></button>
+    </div>`,
+
+  code: `
+    <div class="fx-terminal" aria-label="Animated JavaScript preview">
+      <div class="fx-terminal-top" aria-hidden="true">
+        <span></span><span></span><span></span><b>preview.js</b>
+      </div>
+      <div class="fx-terminal-body">
+        <div class="fx-code-line"><i>const</i> archive = <em>new</em> Vault();</div>
+        <div class="fx-code-line">archive.<strong>filter</strong>(<u>"design"</u>);</div>
+        <div class="fx-code-line"><i>await</i> archive.<strong>open</strong>();</div>
+        <div class="fx-code-line"><span class="fx-comment">// 400+ references</span></div>
+        <div class="fx-code-caret" aria-hidden="true"></div>
+      </div>
+      <div class="fx-code-scan" aria-hidden="true"></div>
+    </div>`,
+
+  web: `
+    <div class="fx-web-window fx-web-window-3" aria-hidden="true">
+      <div class="fx-web-bar"></div>
+      <div class="fx-web-placeholder"><i></i><i></i><i></i></div>
+    </div>
+    <div class="fx-web-window fx-web-window-2" aria-hidden="true">
+      <div class="fx-web-bar"></div>
+      <div class="fx-web-placeholder"><i></i><i></i><i></i></div>
+    </div>
+    <div class="fx-web-window fx-web-window-1" aria-label="Layered browser page preview">
+      <div class="fx-web-bar"><span></span><span></span><span></span><b>archive.design</b></div>
+      <div class="fx-web-main">
+        <div class="fx-web-nav"><i></i><i></i><i></i></div>
+        <div class="fx-web-hero"></div>
+        <div class="fx-web-grid"><i></i><i></i><i></i></div>
+      </div>
+    </div>`,
+};
+
+// 프로젝트 feature key → 문서 fx key
+const FX_KEY = { type: "font" };
+
+function buildFeatureFx(featureKey) {
+  const fxKey = FX_KEY[featureKey] || featureKey;
+  const markup = FX_MARKUP[fxKey];
+  if (!markup) return null;
+
+  const el = document.createElement("div");
+  el.className = `feature-fx feature-fx--${fxKey}`;
+  el.dataset.featureFx = fxKey;
+  if (fxKey === "photo") el.style.setProperty("--photo-image", FX_PHOTO_SRC);
+  el.innerHTML = markup;
+  return el;
+}
+
 const cards = FEATURES.map((f, i) => {
   const card = document.createElement("div");
   card.className = "cfCard";
@@ -393,42 +1817,463 @@ const cards = FEATURES.map((f, i) => {
   dimEl.className = "cfDim";
   dimEl.style.transition = `opacity ${dur}s ${ease}`;
 
-  card.append(fill, sheen, grain, grad);
+  // .feature-fx 는 gradient(fill) 위, sheen/grain/grad/label/dim 아래에 놓는다.
+  // 기존 레이어 순서와 카드 구조는 그대로다.
+  const fxEl = buildFeatureFx(f.key);
+  if (fxEl) card.append(fill, fxEl, sheen, grain, grad);
+  else card.append(fill, sheen, grain, grad);
   if (PROPS.showTitle) card.append(titleBox);
   card.append(dimEl);
 
-  card.addEventListener("click", () => handleCardClick(i));
+  card.addEventListener("click", () => openFeature(i));
   track.appendChild(card);
-  return { el: card, dimEl };
+  return { el: card, dimEl, fxEl };
 });
 
+
+/* ── Feature 내부 interaction 초기화 (전달 문서 5절) ──────────
+   carousel index 를 만들거나 카드 위치를 계산하지 않는다.
+   카드가 JS 로 생성되므로 cards 배열이 만들어진 직후 한 번 호출한다. */
+(() => {
+  document.querySelectorAll(".feature-fx").forEach((root) => {
+    if (root.dataset.fxReady === "true") return;
+    root.dataset.fxReady = "true";
+
+    // 내부 컨트롤 조작이 카드 클릭(=carousel 이동)으로 번지지 않게 막는다.
+    root.querySelectorAll("button, input").forEach((control) => {
+      ["click", "pointerdown", "mousedown", "touchstart"].forEach((name) => {
+        control.addEventListener(name, (e) => e.stopPropagation());
+      });
+    });
+
+    initUi(root);
+    initPhoto(root);
+    initGraphic(root);
+    initIconDock(root);
+    initColor(root);
+  });
+
+  function isActive(root) { return root.classList.contains("is-active"); }
+
+  // COLOR — HEX 라벨을 꽃잎 방향으로 "같은 간격"에 놓는다.
+  //
+  // 라벨은 3D 밖 평면에 있으므로 크기가 항상 일정하다. 남은 문제는
+  // 텍스트 박스가 가로로 길다는 것 — 위를 향한 잎은 높이(h/2)만큼,
+  // 옆을 향한 잎은 너비(w/2)만큼 반지름 방향으로 두껍다.
+  // 그래서 방향 dir 에 대한 박스의 지지폭을 빼줘야 빈틈이 균일해진다.
+  //
+  //     e = (w/2)|dx| + (h/2)|dy|          (축정렬 박스의 지지함수)
+  //     라벨 중심 = 꽃잎 끝 + dir * (GAP + e)
+  function initColor(root) {
+    if (root.dataset.featureFx !== "color") return;
+
+    const layer = root.querySelector(".fx-hexlayer");
+    const label = root.querySelector(".fx-hex");
+    const flower = root.querySelector(".fx-flower");
+    const petals = [...root.querySelectorAll(".fx-petal")];
+    if (!label || !flower) return;
+
+    const GAP = 11;    // 꽃잎 끝과 글자 사이 여백(px) — 전 잎 동일
+    const LIFT = 13;   // 호버 시 꽃잎이 바깥으로 나가는 거리와 맞춘다
+
+    const place = (petal) => {
+      // getBoundingClientRect 는 카드의 3D 변환이 적용된 "화면" 좌표를 준다.
+      // 반면 left/top 은 레이어의 "로컬" CSS px 다. 캐러셀 스케일 때문에
+      // 두 단위가 다르므로 섞으면 간격이 배율만큼 어긋난다.
+      const box = layer.getBoundingClientRect();
+      const sc = box.width / layer.offsetWidth || 1;
+      const toLocal = (sx, sy) => [(sx - box.left) / sc, (sy - box.top) / sc];
+
+      const fr = flower.getBoundingClientRect();
+      const pr = petal.getBoundingClientRect();
+      const [cx, cy] = toLocal((fr.left + fr.right) / 2, (fr.top + fr.bottom) / 2);
+      const [px, py] = toLocal((pr.left + pr.right) / 2, (pr.top + pr.bottom) / 2);
+
+      let dx = px - cx, dy = py - cy;
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len; dy /= len;
+
+      // 꽃잎 밑동이 꽃 중심이므로 끝은 중심에서 꽃잎 중심의 두 배 거리
+      const tipX = cx + (px - cx) * 2, tipY = cy + (py - cy) * 2;
+
+      label.textContent = petal.dataset.hex;
+      const lr = label.getBoundingClientRect();
+      const w = lr.width / sc, h = lr.height / sc;
+      const e = (w / 2) * Math.abs(dx) + (h / 2) * Math.abs(dy);
+      const d = GAP + LIFT + e;
+
+      label.style.left = (tipX + dx * d - w / 2) + "px";
+      label.style.top = (tipY + dy * d - h / 2) + "px";
+      label.classList.add("is-on");
+    };
+
+    petals.forEach((petal) => {
+      petal.addEventListener("pointerenter", () => {
+        if (!isActive(root)) return;
+        place(petal);
+      });
+      petal.addEventListener("focus", () => {
+        if (!isActive(root)) return;
+        place(petal);
+      });
+      const off = () => label.classList.remove("is-on");
+      petal.addEventListener("pointerleave", off);
+      petal.addEventListener("blur", off);
+    });
+  }
+
+  function initUi(root) {
+    if (root.dataset.featureFx !== "ui") return;
+
+    const toggle = root.querySelector(".fx-ui-switch");
+    const tabs = [...root.querySelectorAll(".fx-ui-tab")];
+    const chips = [...root.querySelectorAll(".fx-ui-chip")];
+    const slider = root.querySelector(".fx-ui-slider");
+    const sliderValue = root.querySelector(".fx-ui-slider-value");
+    const minus = root.querySelector(".fx-ui-minus");
+    const plus = root.querySelector(".fx-ui-plus");
+    const stepperValue = root.querySelector(".fx-ui-stepper-value");
+
+    toggle?.addEventListener("click", () => {
+      if (!isActive(root)) return;
+      toggle.setAttribute("aria-pressed", String(toggle.getAttribute("aria-pressed") !== "true"));
+    });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        if (!isActive(root)) return;
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle("is-selected", selected);
+          item.setAttribute("aria-pressed", String(selected));
+        });
+      });
+    });
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (!isActive(root)) return;
+        const selected = !chip.classList.contains("is-selected");
+        chip.classList.toggle("is-selected", selected);
+        chip.setAttribute("aria-pressed", String(selected));
+      });
+    });
+
+    slider?.addEventListener("input", () => {
+      if (!isActive(root)) return;
+      sliderValue.value = slider.value;
+      sliderValue.textContent = slider.value;
+    });
+
+    const changeStep = (delta) => {
+      if (!isActive(root)) return;
+      const current = Number(stepperValue.value || stepperValue.textContent || 0);
+      const next = Math.max(0, Math.min(99, current + delta));
+      stepperValue.value = String(next);
+      stepperValue.textContent = String(next);
+    };
+
+    minus?.addEventListener("click", () => changeStep(-1));
+    plus?.addEventListener("click", () => changeStep(1));
+  }
+
+  function initPhoto(root) {
+    if (root.dataset.featureFx !== "photo") return;
+
+    const setPointer = (clientX, clientY) => {
+      const b = root.getBoundingClientRect();
+      root.style.setProperty("--fx-photo-x", clientX - b.left + "px");
+      root.style.setProperty("--fx-photo-y", clientY - b.top + "px");
+    };
+
+    root.addEventListener("pointerenter", (e) => {
+      if (!isActive(root)) return;
+      setPointer(e.clientX, e.clientY);
+      root.style.setProperty("--fx-photo-ring-opacity", "1");
+    });
+
+    root.addEventListener("pointermove", (e) => {
+      if (!isActive(root)) return;
+      setPointer(e.clientX, e.clientY);
+    });
+
+    root.addEventListener("pointerleave", () => {
+      root.style.setProperty("--fx-photo-x", "50%");
+      root.style.setProperty("--fx-photo-y", "50%");
+      root.style.setProperty("--fx-photo-ring-opacity", "0");
+    });
+  }
+
+  function initGraphic(root) {
+    if (root.dataset.featureFx !== "graphic") return;
+
+    root.addEventListener("pointermove", (e) => {
+      if (!isActive(root)) return;
+      const b = root.getBoundingClientRect();
+      const x = ((e.clientX - b.left) / b.width - 0.5) * 2;
+      const y = ((e.clientY - b.top) / b.height - 0.5) * 2;
+      root.style.setProperty("--fx-gx", x.toFixed(3));
+      root.style.setProperty("--fx-gy", y.toFixed(3));
+    });
+
+    root.addEventListener("pointerleave", () => {
+      root.style.setProperty("--fx-gx", "0");
+      root.style.setProperty("--fx-gy", "0");
+    });
+  }
+
+  function initIconDock(root) {
+    if (root.dataset.featureFx !== "icon") return;
+    const icons = [...root.querySelectorAll(".fx-icon")];
+
+    const reset = () => icons.forEach((icon) => {
+      icon.style.setProperty("--fx-icon-lift", "0px");
+      icon.style.setProperty("--fx-icon-scale", "1");
+    });
+
+    icons.forEach((icon, hoveredIndex) => {
+      icon.addEventListener("pointerenter", () => {
+        if (!isActive(root)) return;
+        icons.forEach((item, itemIndex) => {
+          const d = Math.abs(itemIndex - hoveredIndex);
+          const lift = d === 0 ? -13 : d === 1 ? -6 : d === 2 ? -2 : 0;
+          const scale = d === 0 ? 1.1 : d === 1 ? 1.045 : 1;
+          item.style.setProperty("--fx-icon-lift", lift + "px");
+          item.style.setProperty("--fx-icon-scale", String(scale));
+        });
+      });
+    });
+
+    root.querySelector(".fx-icon-dock")?.addEventListener("pointerleave", reset);
+  }
+})();
+
+// GRAPHIC 카드용 손 — 카드가 아니라 트랙에 붙는다(카드는 overflow:hidden)
+const grabRig = document.createElement("div");
+grabRig.className = "cfGrab";
+grabRig.setAttribute("aria-hidden", "true");
+grabRig.innerHTML =
+  '<div class="cfGrab__knuckles"><img src="/hand-knuckles.png" alt="" /></div>' +
+  '<div class="cfGrab__fingers"><img src="/hand-fingers.png" alt="" /></div>';
+track.appendChild(grabRig);
+const grabKnuckles = grabRig.querySelector(".cfGrab__knuckles");
+const grabFingers = grabRig.querySelector(".cfGrab__fingers");
+const graphicCardEl = cards[FEATURES.findIndex((f) => f.key === "graphic")].el;
+
+// ── 타임라인 (ms) ─────────────────────────────────────────────
+//   WAIT   카드가 가운데로 들어오는 동안(0.8s) 손은 대기 — 그 전엔 카드가
+//          뒤 레이어를 가려주지 못한다
+//   CREEP  손끝이 카드 뒤에서 슬금슬금 올라온다. 두 번 멈칫한다
+//   FLOP   손가락이 모서리를 넘어 카드 앞면으로 내려앉는다(경첩 = 카드 상단)
+//   BEAT   손가락이 닿은 뒤 잠깐 쥐는 틈 — 바로 떨어지면 "무게"가 안 읽힌다
+//   DROP   손 무게에 카드가 아래로 쿵 — 뒤로 젖혀지며 내려앉는다.
+//          앞 16% 는 손이 힘을 주며 카드가 살짝 눌리는 예비동작(anticipation)
+const GRAB = {
+  WAIT: 800,
+  CREEP: 2600,
+  FLOP: 440,
+  BEAT: 90,
+  DROP: 880,
+  DROP_Y: 80,     // 카드 높이의 20% (400px × 0.2)
+  TILT: 45,       // 상단이 뒤로 젖혀지는 각도(rotateX)
+};
+
+// 카드는 캐러셀이 인라인 transform 을 쓰므로 그 위에 "더하기"로 얹어야 한다.
+// composite:'add' 를 못 쓰는 환경에선 카드 낙하만 건너뛴다(캐러셀이 깨지는 것보다 낫다).
+const CAN_ADD = (() => {
+  try {
+    const a = document.createElement("div").animate([{ transform: "none" }], { composite: "add" });
+    const ok = a.effect && a.effect.composite === "add";
+    a.cancel();
+    return ok;
+  } catch { return false; }
+})();
+
+let grabAnims = [];
+let grabDrop = null;
+let grabOn = false;
+
+function playGrab() {
+  stopGrab(true);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const d = (ms) => (reduce ? 1 : ms);
+  const t0 = reduce ? 0 : GRAB.WAIT;
+  const tFlop = t0 + d(GRAB.CREEP) - (reduce ? 0 : 160);
+  const tDrop = tFlop + d(GRAB.FLOP) + (reduce ? 0 : GRAB.BEAT);
+  // 구간마다 이징이 새로 걸린다(T8). 나아갈 땐 감속, 움찔할 땐 빠르게, 머뭇일 땐 느리게
+  const reach = "cubic-bezier(.3, .1, .25, 1)";
+  const flinch = "cubic-bezier(.2, 0, .4, 1)";
+  const hover = "cubic-bezier(.45, 0, .55, 1)";
+
+  // 리그 표시 — 카드가 자리 잡은 뒤에만
+  grabAnims.push(grabRig.animate(
+    [{ opacity: 0 }, { opacity: 1 }],
+    { delay: t0, duration: 1, fill: "both" }
+  ));
+
+  // 손끝이 기어오른다. knuckles 내용은 레이어 아래쪽 71px —
+  //   y 80: 완전히 숨음 → 58: 손끝 빼꼼 → 움찔 물러남 → 머뭇 → 28: 반쯤 → 움찔
+  //   → 머뭇 → −3: 모서리 너머로 손을 뻗느라 살짝 넘침 → 0
+  // 멈칫 구간도 완전히 서지 않고 1~2px 흘러간다(정지 = 기계처럼 보임).
+  // x 는 몇 px 좌우로 흔들려 경로가 직선이 아니라 호를 그린다.
+  const z = "translateZ(-2px)";
+  const kn = (x, y, r) => z + " translate(" + x + "px, " + y + "px) rotate(" + r + "deg)";
+  grabAnims.push(grabKnuckles.animate([
+    { offset: 0,   transform: kn(0, 80, 0),        easing: reach },
+    { offset: .20, transform: kn(-3, 57, -1.6),    easing: flinch },
+    { offset: .27, transform: kn(-2, 62, -1.1),    easing: hover },
+    { offset: .42, transform: kn(-1, 60, -.9),     easing: reach },
+    { offset: .64, transform: kn(3, 28, .9),       easing: flinch },
+    { offset: .70, transform: kn(2.5, 31, .7),     easing: hover },
+    { offset: .80, transform: kn(2, 29, .5),       easing: reach },
+    { offset: .95, transform: kn(0, -3, -.3),      easing: hover },
+    { offset: 1,   transform: kn(0, 0, 0) },
+  ], { delay: t0, duration: d(GRAB.CREEP), fill: "both" }));
+
+  // 손가락이 모서리를 넘어 카드 면을 "철썩" 친다 — 중력처럼 가속해 0° 에 닿고,
+  // 면에서 4° 튕겼다 붙는다. 0° 를 지나치면(음수) 손끝이 카드 평면을 파고들어
+  // 깊이 정렬에 잘리므로 오버슈트는 항상 바깥(+) 쪽으로만.
+  const fz = "translateZ(2px) ";
+  grabAnims.push(grabFingers.animate([
+    { offset: 0,   transform: fz + "rotateX(100deg)", easing: "cubic-bezier(.55, 0, .9, .45)" },
+    { offset: .62, transform: fz + "rotateX(0deg)",   easing: "cubic-bezier(.2, .6, .4, 1)" },
+    { offset: .8,  transform: fz + "rotateX(4deg)",   easing: "cubic-bezier(.5, 0, .7, 1)" },
+    { offset: 1,   transform: fz + "rotateX(0deg)" },
+  ], { delay: tFlop, duration: d(GRAB.FLOP), fill: "both" }));
+
+  // 쿵 — 카드와 리그에 같은 낙하를 건다. 가속해서 떨어지고, 한 번 튕긴 뒤 안착
+  const Y = GRAB.DROP_Y, T = GRAB.TILT;
+  //   0 → .16  예비동작: 손이 힘을 주며 카드가 5px 눌린다(아직 버티는 중)
+  //   .16 → .56 버티던 게 풀리며 가속 낙하, 8% 지나침
+  //   .56 → 1   한 번 튕기고 안착
+  const fall = (pre) => [
+    { offset: 0,   transform: pre + "translateY(0px) rotateX(0deg)", easing: "cubic-bezier(.3, 0, .5, 1)" },
+    { offset: .16, transform: pre + "translateY(5px) rotateX(1.5deg)", easing: "cubic-bezier(.6, 0, .9, .4)" },
+    { offset: .56, transform: pre + "translateY(" + Y * 1.08 + "px) rotateX(" + T * 1.07 + "deg)", easing: "cubic-bezier(.2, .7, .4, 1)" },
+    { offset: .78, transform: pre + "translateY(" + Y * .95 + "px) rotateX(" + T * .96 + "deg)", easing: "cubic-bezier(.4, 0, .4, 1)" },
+    { offset: 1,   transform: pre + "translateY(" + Y + "px) rotateX(" + T + "deg)" },
+  ];
+  if (CAN_ADD) {
+    grabAnims.push(grabRig.animate(fall("translate(-50%, -50%) "),
+      { delay: tDrop, duration: d(GRAB.DROP), fill: "forwards" }));
+    grabDrop = graphicCardEl.animate(fall(""),
+      { delay: tDrop, duration: d(GRAB.DROP), fill: "forwards", composite: "add" });
+    grabDrop._delay = tDrop;
+
+    // 손이 무게를 싣는다 — 2차 동작. 예비동작 동안 마디가 3px 아래로 쥐어지고,
+    // 쿵 하는 순간 손가락은 관성으로 카드 면에서 살짝 들렸다(+) 다시 붙는다.
+    // fill:"forwards" — 대기 중(backwards)엔 앞 구간 애니메이션 값을 가리지 않게.
+    const drop = { delay: tDrop, duration: d(GRAB.DROP), fill: "forwards" };
+    grabAnims.push(grabKnuckles.animate([
+      { offset: 0,   transform: kn(0, 0, 0),  easing: "cubic-bezier(.3, 0, .5, 1)" },
+      { offset: .16, transform: kn(0, 3, 0),  easing: "cubic-bezier(.4, 0, .6, 1)" },
+      { offset: .56, transform: kn(0, 1, 0),  easing: "cubic-bezier(.4, 0, .4, 1)" },
+      { offset: 1,   transform: kn(0, 2, 0) },
+    ], drop));
+    grabAnims.push(grabFingers.animate([
+      { offset: 0,   transform: fz + "rotateX(0deg)", easing: "linear" },
+      { offset: .56, transform: fz + "rotateX(0deg)", easing: "cubic-bezier(.2, .7, .4, 1)" },
+      { offset: .68, transform: fz + "rotateX(6deg)", easing: "cubic-bezier(.4, 0, .3, 1)" },
+      { offset: 1,   transform: fz + "rotateX(0deg)" },
+    ], drop));
+  }
+}
+
+// 다른 카드로 넘어가면 손은 즉시 숨기고, 이미 내려앉은 카드는 빠르게 되돌린다
+function stopGrab(instant = false) {
+  grabAnims.forEach((a) => a.cancel());
+  grabAnims = [];
+  const a = grabDrop;
+  grabDrop = null;
+  if (!a) return;
+  const t = (a.currentTime ?? 0) - a._delay;
+  if (instant || t <= 0) { a.cancel(); return; }
+  a.effect.updateTiming({ delay: 0 });
+  a.currentTime = Math.min(t, GRAB.DROP);
+  a.updatePlaybackRate(-2.5);
+  a.onfinish = () => a.cancel();
+}
+
+function syncGrab(on) {
+  if (on === grabOn) return;
+  grabOn = on;
+  if (on) playGrab(); else stopGrab();
+}
+
 // 원본 map 내부 계산식 그대로
+// 배치는 원본 Originkit 계산식을 기준으로 하되, 가장자리 카드가 그냥
+// 옆으로 밀려 사라지지 않고 링을 따라 뒤로 말려 들어가도록 곡률만 더한다.
+//
+//   tx : 직선(rel*300) 대신 sin 곡선 → 바깥으로 갈수록 안쪽으로 당겨짐
+//   tz : 원본 깊이에 (1-cos) 만큼 추가 → 바깥일수록 더 뒤로
+//   ry : 원본 tilt 에 링을 따라 도는 각도를 조금 더함
+//
+// ARC_RADIUS 는 rel=1 에서 tx 가 원본 간격(300px)과 정확히 일치하도록 잡는다.
+// 따라서 가운데 3장의 위치감은 원본과 같고, ±2 에서만 곡률이 드러난다.
+const ARC = 30;                 // deg — 카드 간 링 각도
+const ARC_RAD = (ARC * Math.PI) / 180;
+const BASE_GAP = 355;           // rel=1 의 가로 간격(px). 원본은 300
+// ARC 를 키우면 sin 압축 때문에 바깥 카드가 더 안쪽으로 당겨진다.
+// 그만큼 반지름을 키워 rel=1 간격을 BASE_GAP 으로 고정하고,
+// 바깥으로 갈수록 EDGE_SPREAD 만큼 추가로 벌려 좌우 여백을 줄인다.
+const ARC_RADIUS = BASE_GAP / Math.sin(ARC_RAD);
+const EDGE_SPREAD = 0.19;       // rel 이 1 커질 때마다 더 벌리는 비율
+const ARC_TURN = 0.35;          // 링을 따라 추가로 도는 정도
+
 function render() {
-  cards.forEach(({ el, dimEl }, i) => {
+  cards.forEach(({ el, dimEl, fxEl }, i) => {
     let rel = i - active;
     if (loop) {
       if (rel > n / 2) rel -= n;
       if (rel < -n / 2) rel += n;
     }
     const ax = Math.abs(rel);
-    const visible = ax <= MAX_VISIBLE;
+    const visible = ax <= MAX_VISIBLE;           // 화면에는 5장만
     const isActive = rel === 0;
     const sc = Math.max(0.4, 1 - ax * SCALE_STEP);
-    const tx = rel * (PROPS.gap * 30);
-    const tz = -ax * DEPTH;
-    const ry = -rel * PROPS.tilt;
+
+    const a = rel * ARC_RAD;
+    const spread = 1 + Math.max(0, ax - 1) * EDGE_SPREAD;   // 가장자리만 더 벌림
+    const tx = ARC_RADIUS * Math.sin(a) * spread;
+    const tz = -ax * DEPTH - ARC_RADIUS * (1 - Math.cos(a));
+    const ry = -rel * PROPS.tilt - rel * ARC * ARC_TURN;
     const rz = rel * PROPS.sideTilt;
 
     el.style.transform =
-      `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${sc})`;
-    el.style.opacity = visible ? 1 : 0;
+      `translate(-50%, -50%) translateX(${tx.toFixed(1)}px) translateZ(${tz.toFixed(1)}px) rotateY(${ry.toFixed(1)}deg) rotateZ(${rz}deg) scale(${sc})`;
+    el.style.opacity = visible ? 1 : 0;          // 나머지는 0.8s 페이드로 물러남
+    // 측면 카드는 눌러서 이동하므로 pointer.
+    // 중앙 카드는 섹션을 붙이기 전까지 반응이 없으므로 default 로 둔다.
+    // 섹션이 생기면 여기도 pointer 로 바꾼다.
     el.style.cursor = PROPS.autoplay || isActive ? "default" : "pointer";
     el.style.pointerEvents = visible && !PROPS.autoplay ? "auto" : "none";
     dimEl.style.opacity = isActive ? 0 : dimAmount;
+
+    // 중앙 카드의 .feature-fx 에만 is-active. 지속 애니메이션과 pointer 효과가
+    // 여기서만 돈다. 카드 transform/위치/z-index 는 건드리지 않는다.
+    if (fxEl) {
+      fxEl.classList.toggle("is-active", isActive);
+      fxEl.setAttribute("aria-hidden", String(!isActive));
+      fxEl.toggleAttribute("inert", !isActive);
+      if (!isActive) {
+        fxEl.style.setProperty("--fx-photo-x", "50%");
+        fxEl.style.setProperty("--fx-photo-y", "50%");
+        fxEl.style.setProperty("--fx-photo-ring-opacity", "0");
+        fxEl.style.setProperty("--fx-gx", "0");
+        fxEl.style.setProperty("--fx-gy", "0");
+        fxEl.querySelectorAll(".fx-icon").forEach((icon) => {
+          icon.style.setProperty("--fx-icon-lift", "0px");
+          icon.style.setProperty("--fx-icon-scale", "1");
+        });
+      }
+    }
   });
+
+  // 활성 카드가 GRAPHIC 이 되는 순간 손 연출 시작, 벗어나면 정리
+  syncGrab(FEATURES[active].key === "graphic");
 }
 
-// 원본 lock / step / handleCardClick
+// 원본 lock / step (클릭 진입은 openFeature)
 const moveDur =
   PROPS.transition && typeof PROPS.transition.duration === "number" ? PROPS.transition.duration : 0.6;
 let locked = false;
@@ -442,11 +2287,24 @@ function step(dir) {
   active = (((active + dir) % n) + n) % n;
   render();
 }
-function handleCardClick(i) {
+// 카드 클릭은 어느 카드를 눌렀느냐로 갈린다.
+//
+//   측면 카드 → 그 카드로 이동 (기존 동작)
+//   중앙 카드 → 자기 Feature 의 섹션으로 진입
+//
+// 원본은 중앙 카드를 눌러도 (active + 1) 로 옆으로 넘어갔다. 그 부분만 없앴다.
+function openFeature(i) {
   if (PROPS.autoplay || locked) return;
-  lock();
-  active = i === active ? (active + 1) % n : i;
-  render();
+
+  if (i !== active) {
+    lock();
+    active = i;
+    render();
+    return;
+  }
+
+  // 중앙 카드 — 상세 섹션은 아직 없으므로 지금은 아무 일도 하지 않는다.
+  // TODO: FEATURES[i].key 의 섹션 진입 / 페이지 전환을 여기에 연결한다.
 }
 
 root.addEventListener("keydown", (e) => {
@@ -454,73 +2312,93 @@ root.addEventListener("keydown", (e) => {
   else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
 });
 
+// ── 휠 이동 ──────────────────────────────────────────────
+// 원본 step() 은 이동이 끝날 때까지(0.8s) 입력을 잠가서, 빠르게 굴려도
+// 대부분 씹힌다. 그렇다고 시간 간격마다 한 칸씩 보내면(이전 시도) 스무스
+// 스크롤·정밀 터치패드처럼 한 노치에 이벤트를 수십 개 쏟는 환경에서
+// 한 노치가 여러 칸을 넘어가 버린다.
+//
+// 그래서 "시간"이 아니라 "제스처" 단위로 센다.
+//   · 이벤트가 GESTURE_GAP 이상 끊겼다 다시 오면 = 새 노치 → 즉시 한 칸
+//   · 같은 제스처가 이어지는 동안 쌓인 세기가 EXTRA_PX 를 넘을 때마다 한 칸 추가
+// 이러면 노치 하나는 장치와 무관하게 정확히 한 칸이고, 길게 굴리면 가속된다.
+const GESTURE_GAP = 120;   // ms — 이보다 오래 끊기면 새 제스처(=새 노치)
+const EXTRA_PX = 520;      // 한 제스처 안에서 이만큼 더 쌓일 때마다 한 칸 추가
+
+let lastWheelAt = 0;
+let gestureAccum = 0;
+
+function normalizeWheelPx(e) {
+  if (e.deltaMode === 1) return e.deltaY * 16;    // 줄 단위 → px
+  if (e.deltaMode === 2) return e.deltaY * 400;   // 페이지 단위 → px
+  return e.deltaY;                                // 이미 px
+}
+
+// 잠금 없이 이동. CSS 트랜지션이 목표값을 다시 쫓아가므로 연속 입력에도
+// 끊기지 않고 가속되는 느낌이 난다.
+function advanceBy(steps) {
+  if (!steps) return;
+  active = (((active + steps) % n) + n) % n;
+  render();
+}
+
 window.addEventListener("wheel", (e) => {
   if (e.target instanceof Element && e.target.closest(".panel")) return;
   e.preventDefault();
-  step(Math.sign(e.deltaY) || 1);
+
+  const px = normalizeWheelPx(e);
+  if (!px) return;
+
+  const now = performance.now();
+  const dir = Math.sign(px);
+
+  if (now - lastWheelAt > GESTURE_GAP) {
+    gestureAccum = 0;
+    advanceBy(dir);                 // 새 노치 → 즉시 한 칸
+  } else {
+    gestureAccum += Math.abs(px);
+    if (gestureAccum >= EXTRA_PX) { // 계속 굴리는 중 → 가속
+      gestureAccum = 0;
+      advanceBy(dir);
+    }
+  }
+  lastWheelAt = now;
 }, { passive: false });
+
+// ── 카드군을 헤더와 같은 기준선에 정렬 ──────────────────────
+// 코버플로는 고정 px 트랜스폼 + 중앙정렬이라, 카드군의 좌우 여백이 뷰포트
+// 폭에 그대로 끌려간다(실측: 1200px→4px, 1424px→116px, 1920px→364px).
+// 고정 마진값을 카드에 맞추면 한 해상도에서만 정렬되므로, 반대로 카드군을
+// 스케일해서 어느 폭에서든 --side-margin 선에 맞춘다.
+const SPAN_HALF = 596;   // scale 1 일 때 화면 중심~바깥 카드 끝(px, 실측)
+// 상·하한은 "카드가 뷰포트 폭에서 차지하는 비율"이 1424px 기준과 크게
+// 어긋나지 않는 선에서 잡았다. 이 사이(약 1030~1810px)에서는 카드 좌우
+// 여백이 --side-margin 과 정확히 일치하고, 밖으로 나가면 여백이 벌어진다.
+const FIT_MIN = 0.70;
+const FIT_MAX = 1.35;
+
+function fitTrack() {
+  const margin = parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue("--side-margin")
+  ) || 100;
+  const half = window.innerWidth / 2 - margin;
+  const s = Math.max(FIT_MIN, Math.min(FIT_MAX, half / SPAN_HALF));
+  track.style.transform = `scale(${s.toFixed(4)})`;
+}
+
+fitTrack();
+window.addEventListener("resize", fitTrack);
 
 render();
 root.focus();
 
 
-/* ══ 폴더 밖: Hit me 4타 + 드립 + 링크 추가 ══════════════ */
-const FILL_STEPS = [0.29, 0.53, 0.79, 1];
-const STEP_JITTER = 0.04;
-const DRIP_MS = 1600;
-
-const hitBtn = document.getElementById("hitBtn");
-const hitStage = document.getElementById("hitStage");
-const fillLayer = document.getElementById("hitFillLayer");
-let hits = 0, dripping = false;
-
-function measureDripLeft() {
-  const p = document.getElementById("hitFillText");
-  const idx = p.textContent.indexOf("m");
-  const range = document.createRange();
-  range.setStart(p.firstChild, idx);
-  range.setEnd(p.firstChild, idx + 1);
-  const r = range.getBoundingClientRect();
-  const s = hitStage.getBoundingClientRect();
-  return r.left - s.left + r.width / 2;
-}
-
-hitBtn.addEventListener("click", () => {
-  if (dripping) return;
-  hits = Math.min(FILL_STEPS.length, hits + 1);
-  const isFinal = hits >= FILL_STEPS.length;
-  const base = FILL_STEPS[hits - 1];
-  const p = isFinal ? 1 : Math.min(0.95, base + (Math.random() * 2 - 1) * STEP_JITTER);
-  fillLayer.style.clipPath = `inset(${(1 - p) * 100}% 0 0 0)`;
-
-  hitStage.animate(
-    [
-      { transform: "scale(1,1)" }, { transform: "scale(1.22,0.6)" },
-      { transform: "scale(0.86,1.14)" }, { transform: "scale(1.04,0.96)" },
-      { transform: "scale(1,1)" },
-    ],
-    { duration: 420, easing: "ease-in-out" }
-  );
-
-  if (isFinal) {
-    dripping = true;
-    const drip = document.createElement("div");
-    drip.className = "dripLayer";
-    const trail = document.createElement("span");
-    trail.className = "dripTrail";
-    trail.style.left = `${measureDripLeft()}px`;
-    drip.appendChild(trail);
-    hitStage.appendChild(drip);
-    window.setTimeout(() => { openModal(); drip.remove(); }, DRIP_MS);
-  }
-});
-
-function resetHit() { hits = 0; dripping = false; fillLayer.style.clipPath = "inset(100% 0 0 0)"; }
-
+/* ══ 링크 추가 모달 ════════════════════════════════════
+   Hit me 버튼을 지워 지금은 여는 진입점이 없다. 기능은 남겨 둔다. */
 const backdrop = document.getElementById("backdrop");
 const panel = document.getElementById("panel");
 function openModal() { renderInput(); backdrop.classList.add("on"); }
-function closeModal() { backdrop.classList.remove("on"); panel.innerHTML = ""; resetHit(); root.focus(); }
+function closeModal() { backdrop.classList.remove("on"); panel.innerHTML = ""; root.focus(); }
 backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
 
 function renderInput() {

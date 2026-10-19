@@ -1,21 +1,97 @@
-# Reference Vault
+# Gleora
 
-개인용 디자인 레퍼런스 갤러리. 좋은 레퍼런스 사이트를 한 줄 설명과 함께 모아두고,
-방문자가 새 링크를 제안하면 운영자에게 Slack DM으로 알림이 간다.
+디자인 레퍼런스를 **피쳐별 폴더**로 모아 보는 개인용 갤러리.
+[Reference Vault](https://github.com/thvlou/Reference_vault)를 처음부터 다시 디자인하는 프로젝트다.
 
-**배포**: https://refvault-app.vercel.app
+> **지금 상태 — 디자인 프로토타입 단계**
+> 새 디자인은 `public/folder-ui-preview.html` 한 파일 안에서 만들고 있다.
+> `src/` 의 React 앱은 아직 리디자인 이전의 Reference Vault 그대로이며,
+> 프로토타입이 확정되면 그때 앱으로 옮긴다.
 
 ---
 
-## 무엇이 다른가
+## 무엇이 바뀌나
 
-레퍼런스 아카이브는 이미 많다. 이 프로젝트가 다르게 잡은 지점은 셋이다.
+| | Reference Vault | Gleora |
+|---|---|---|
+| 단위 | 사이트 한 줄 목록 | **9개 피쳐 폴더** (WEB · UI · GRAPHIC · TYPE · MOTION · PHOTO · COLOR · ICON · CODE) |
+| 탐색 | 이름 위 커서로 이미지 미리보기 | 3D 링 커버플로 — 휠 한 칸 = 카드 한 장 |
+| 카드 | — | 피쳐마다 그 성격을 직접 보여주는 인터랙션이 카드 안에 들어 있다 |
 
-| | |
+---
+
+## 프로토타입 보기
+
+```bash
+npm install
+npm run dev
+```
+
+브라우저에서 `http://localhost:5173/folder-ui-preview.html` 을 연다.
+앱 번들과 무관한 독립 HTML이다. 외부 라이브러리 없이 이 파일 하나로 동작하고,
+웹폰트만 Google Fonts 에서 받는다.
+
+| 조작 | 동작 |
 |---|---|
-| **한 줄 설명** | 모든 항목에 한글 설명이 붙는다. 이름만 보고 판단하지 않아도 된다. |
-| **인터랙션** | 화면을 떠다니는 버튼, 4번 때려야 열리는 제출 폼 등 — 도구가 아니라 사물처럼 다룬다. |
-| **사람이 개입하는 큐레이션** | 제출은 자동 등록이 아니라 알림까지만. 직접 확인한 뒤 손으로 추가한다. |
+| 휠 / ← → | 카드 한 장씩 이동. 빠르게 굴리면 그만큼 빠르게 넘어간다 |
+| 옆 카드 클릭 | 그 카드로 이동 |
+| 가운데 카드 클릭 | 피쳐 섹션으로 진입 (섹션은 아직 미구현) |
+
+---
+
+## 카드별 인터랙션
+
+가운데에 온 카드에서만 동작한다. 옆 카드는 정지 상태로 보인다.
+
+| 카드 | 내용 |
+|---|---|
+| **WEB** | 브라우저 페이지 3장이 겹쳐 천천히 깊이가 움직인다 |
+| **UI** | 스위치 · 세그먼트 · 필터 칩 · 슬라이더 · 스테퍼 — 실제로 조작된다 |
+| **GRAPHIC** | 스위스 포스터 레이어 패럴랙스. 선택하면 손이 카드 뒤에서 기어올라와 잡고, 그 무게에 카드가 내려앉는다 |
+| **TYPE** | 큰 `Aa` 가 Sans → Editorial Serif → Mono 로 전환된다 |
+| **MOTION** | 이징 커브 위를 점과 잔상이 따라간다 |
+| **PHOTO** | 흑백 사진에서 커서 주변만 색이 돌아온다 |
+| **COLOR** | 3D 데이지 두 송이. 줄기부터 자라 피어나고, 꽃잎에 올리면 빠지며 HEX 가 보인다 |
+| **ICON** | 아이콘 독 — 가리킨 아이콘과 이웃이 단계적으로 올라온다 |
+| **CODE** | 미니 터미널 — 코드가 한 줄씩 나타나고 캐럿이 깜빡인다 |
+
+---
+
+## 설계 메모
+
+구현하며 정한 것 중 다시 보면 이유를 잊기 쉬운 것들. 자세한 과정은 `devlog.md`.
+
+- **카드 배치는 Originkit CoverflowGallery 의 계산식**을 그대로 가져오고,
+  가장자리 카드가 링을 따라 뒤로 말려 들어가도록 곡률만 더했다.
+- **헤더와 카드가 같은 기준선(100px)을 쓴다.** 커버플로는 고정 크기 중앙정렬이라
+  뷰포트에 따라 여백이 달라지므로, 카드군을 스케일해서 기준선에 맞춘다.
+- **카드 내부 효과는 `.feature-fx` 안에만** 들어간다. 카드 크기·배치·라벨·클릭 로직은
+  건드리지 않는다는 원칙으로 붙였다.
+- **카드 밖으로 나와야 하는 요소(GRAPHIC 의 손)는 트랙에 얹는다.** 카드는
+  `overflow: hidden` 이라 안에 두면 잘린다.
+- **카드에 연출을 더할 때는 캐러셀 transform 을 덮어쓰지 않고 더한다**
+  (WAAPI `composite: 'add'`).
+- 3D 컨텍스트 안에서 `filter` · `mask` 는 쓰지 않는다 — `preserve-3d` 를 평면화한다.
+  변환하는 요소와 그림자/마스크를 거는 요소를 나눈다.
+
+---
+
+## 구조
+
+```
+public/
+├─ folder-ui-preview.html   리디자인 프로토타입 (현재 작업 대상)
+├─ gleora-logo.svg          로고 — Figma 벡터 내보내기
+├─ hand-knuckles.png        GRAPHIC 손 — 손등, 카드 뒤 레이어
+├─ hand-fingers.png         GRAPHIC 손 — 손가락, 카드 앞 레이어
+├─ folder-ui-accordion.html 이전 탐색안 (아코디언) — 참고용
+├─ folder-ui-patterns.html  이전 탐색안 (패턴) — 참고용
+└─ hit-me-demo.html         Reference Vault 시절 버튼 효과 비교 — 참고용
+
+src/                        Reference Vault React 앱 (리디자인 전)
+src/assets/hand.png         GRAPHIC 손 원본 — 위 두 장은 여기서 잘라냈다
+api/notify.ts               링크 제안 → Slack 알림 (Vercel Edge Function)
+```
 
 ---
 
@@ -23,66 +99,13 @@
 
 | 영역 | 선택 |
 |---|---|
-| 빌드 | Vite 8 |
-| 프레임워크 | React 19 + TypeScript 6 |
-| 스타일 | **CSS Modules only** (Tailwind 미사용) |
-| 애니메이션 | framer-motion 13 |
-| 라우터 · 상태관리 | **없음** — 단일 페이지, `useState` 로 충분 |
-| 백엔드 | Vercel Edge Function 1개 (`api/notify.ts`) |
-| 알림 | Slack Incoming Webhook |
+| 프로토타입 | 단일 HTML + CSS + 바닐라 JS, 외부 라이브러리 없음 |
+| 앱 | Vite 8 · React 19 · TypeScript 6 · **CSS Modules only** · framer-motion 13 |
+| 라우터 · 상태관리 | 없음 |
+| 백엔드 | Vercel Edge Function 1개 + Slack Incoming Webhook |
 
-> 라우터·상태관리·CSS 프레임워크를 의도적으로 넣지 않았다.
-> 이 규모에서는 불필요하고, 손그림 톤의 커스텀 인터랙션을 오히려 방해했다.
-
----
-
-## 구조
-
-```
-src/
-├─ components/
-│  ├─ HoverImageReveal.tsx   메인 캐러셀 — 무한 벨트 + 커서 추적 3D 로고
-│  │                          (데스크탑=휠 / 모바일=드래그+관성, inputMode 로 분기)
-│  ├─ ExtrudedLogoPanel.tsx  CSS 3D(perspective+translateZ) 14레이어 가짜 입체 로고
-│  ├─ TexturedBackground.tsx 떠다니는 블롭 + 그레인 배경
-│  │
-│  ├─ AddFlow.tsx            데스크탑 제출 플로우 상태 머신
-│  ├─ AddButton.tsx          "Hit me !" — 4타 타격 → 차오름 → 드립
-│  ├─ Wanderer.tsx           화면을 떠다니며 벽에 반사되는 래퍼
-│  ├─ InputSection.tsx       URL 입력 + 인라인 에러
-│  ├─ SubmitButton.tsx       바운스 / 잘못된 URL이면 랜덤 4방향 회피
-│  │
-│  ├─ MobileAddFlow.tsx      모바일 제출 플로우 (물리 연출 없이 단순화)
-│  ├─ MobileInputSection.tsx 모바일 입력 — 손그림 SVG 외곽선은 동일 적용
-│  │
-│  ├─ LoadingSection.tsx     회전하는 눈 2개 + 점 순환
-│  ├─ DoneSection.tsx        스프링 팝인
-│  ├─ ErrorSection.tsx       재시도
-│  └─ FallingEmojis.tsx      전체 화면 낙하 이모지
-│
-├─ data/refs.ts              레퍼런스 데이터
-└─ index.css                 @font-face, 전역 키프레임
-
-api/notify.ts                URL 검증 → Slack 웹훅 전송 (Edge Runtime)
-```
-
----
-
-## 실행
-
-```bash
-npm install
-npm run dev
-```
-
-Slack 알림까지 확인하려면 `.env.example` 을 참고해 환경변수를 설정하고 `vercel dev` 로 실행한다.
-
-| 명령 | 용도 |
-|---|---|
-| `npm run dev` | 프론트만 (API 라우트 미동작) |
-| `vercel dev` | API 라우트 포함 |
-| `npm run build` | 타입체크 + 프로덕션 빌드 |
-| `npm run lint` | oxlint |
+Slack 알림까지 확인하려면 `.env.example` 을 참고해 `.env.local` 에
+`SLACK_WEBHOOK_URL` 을 넣고 `vercel dev` 로 실행한다. `.env*` 는 커밋되지 않는다.
 
 ---
 
@@ -90,15 +113,15 @@ Slack 알림까지 확인하려면 `.env.example` 을 참고해 환경변수를 
 
 | 파일 | 내용 |
 |---|---|
-| `PROJECT_LOG.md` | 제작 과정 기록 — 구현 핵심, 겪은 문제와 해결 |
 | `devlog.md` | 작업 로그와 트러블슈팅 |
-| `PRD-v1.md` | 리디자인 기획서 (진행 중) |
+| `PRD-v1.md` | 리디자인 기획서 |
 | `pattern-research.md` | 피쳐별 패턴 설계 근거 |
+| `batch-01-design.md` | 첫 레퍼런스 배치 설계 |
+| `PROJECT_LOG.md` | Reference Vault 제작 기록 |
 
 ---
 
-## 상태
+## 이력
 
-이 커밋은 **리디자인 착수 이전 시점의 스냅샷**이다.
-`public/` 안의 `*-preview.html`, `hit-me-demo.html` 은 디자인 검토용 독립 파일로,
-앱 번들에 포함되지 않으며 실제 사이트 동작과 무관하다.
+첫 커밋은 리디자인 착수 직전 Reference Vault 스냅샷이고, 그 위로 Gleora 작업이 쌓인다.
+리디자인 이전 버전은 [thvlou/Reference_vault](https://github.com/thvlou/Reference_vault)에 따로 보관한다.
