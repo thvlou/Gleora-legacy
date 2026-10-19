@@ -43,7 +43,7 @@ export default function ExtrudedLogoPanel({ item, active }: { item: Ref; active:
           style={{
             position: "relative",
             transformStyle: "preserve-3d",
-            animation: active ? "refvault-spin3d 5s linear infinite" : undefined,
+            animation: active ? "gleora-spin3d 5s linear infinite" : undefined,
           }}
         >
           {Array.from({ length: EXTRUDE_LAYERS }).map((_, i) => {

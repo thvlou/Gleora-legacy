@@ -45,7 +45,7 @@
    지원하지 않는 환경에서 z-index 없이 DOM 순서로 쌓이는 것이었다. 앞면에
    z-index 를 명시해 해결했으므로(HoverImageReveal.tsx) 다시 0~360도 완주로
    되돌린다. */
-@keyframes refvault-spin3d {
+@keyframes gleora-spin3d {
   from {
     transform: rotateY(0deg);
   }

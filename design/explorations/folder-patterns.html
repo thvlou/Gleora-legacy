@@ -108,7 +108,7 @@
 
   .cfDim { position: absolute; inset: 0; background: #000000; pointer-events: none; }
   /* == 피쳐별 패턴 - 색 외의 구분축. 전부 CSS/인라인 SVG ==
-     근거: pattern-research.md */
+     근거: docs/pattern-research.md */
   .cfPat { position: absolute; inset: 0; pointer-events: none; }
 
   /* WEB - 컬럼 그리드 + 뷰포트 */
@@ -435,7 +435,7 @@ track.style.width = PROPS.cardWidth + "px";
 track.style.height = PROPS.cardHeight + "px";
 
 
-// -- 피쳐별 패턴 레이어 (근거: pattern-research.md) --------
+// -- 피쳐별 패턴 레이어 (근거: docs/pattern-research.md) --------
 // 카드 면만 교체한다. 원본의 transform/transition/dim 값은 건드리지 않음.
 const GRAIN_URI = "data:image/svg+xml," + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">' +

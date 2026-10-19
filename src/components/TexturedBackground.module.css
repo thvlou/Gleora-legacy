@@ -19,14 +19,14 @@
   top: -15%;
   left: -10%;
   background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 70%);
-  animation: refvault-drift-a 26s ease-in-out infinite;
+  animation: gleora-drift-a 26s ease-in-out infinite;
 }
 
 .blobBlack {
   right: -15%;
   bottom: -20%;
   background: radial-gradient(circle, rgba(20, 20, 20, 0.65) 0%, rgba(20, 20, 20, 0) 70%);
-  animation: refvault-drift-b 32s ease-in-out infinite;
+  animation: gleora-drift-b 32s ease-in-out infinite;
 }
 
 .blobBlack2 {
@@ -35,7 +35,7 @@
   width: 50vmax;
   height: 50vmax;
   background: radial-gradient(circle, rgba(58, 58, 58, 0.5) 0%, rgba(58, 58, 58, 0) 70%);
-  animation: refvault-drift-c 38s ease-in-out infinite;
+  animation: gleora-drift-c 38s ease-in-out infinite;
 }
 
 .blobWhite2 {
@@ -44,14 +44,14 @@
   width: 45vmax;
   height: 45vmax;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 70%);
-  animation: refvault-drift-d 30s ease-in-out infinite;
+  animation: gleora-drift-d 30s ease-in-out infinite;
 }
 
 /* 서로 다른 시작 위치·주기·이동 방향을 줘서 블롭들이 기계적으로 같이 움직이지
    않고 각자 따로 살아 움직이는 것처럼 겹쳐 보이게 한다. 단순히 원점↔한 지점을
    왕복하면 한쪽 방향으로만 움직이는 느낌이 나서, 중간 경유점을 여러 개 둬서
    매번 다른 방향으로 꺾어 더 넓은 범위를 자유롭게 도는 경로로 만들었다. */
-@keyframes refvault-drift-a {
+@keyframes gleora-drift-a {
   0%,
   100% {
     transform: translate(0, 0) scale(1);
@@ -67,7 +67,7 @@
   }
 }
 
-@keyframes refvault-drift-b {
+@keyframes gleora-drift-b {
   0%,
   100% {
     transform: translate(0, 0) scale(1);
@@ -83,7 +83,7 @@
   }
 }
 
-@keyframes refvault-drift-c {
+@keyframes gleora-drift-c {
   0%,
   100% {
     transform: translate(0, 0) scale(0.95);
@@ -99,7 +99,7 @@
   }
 }
 
-@keyframes refvault-drift-d {
+@keyframes gleora-drift-d {
   0%,
   100% {
     transform: translate(0, 0) scale(1);

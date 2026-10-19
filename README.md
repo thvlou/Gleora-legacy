@@ -4,7 +4,7 @@
 [Reference Vault](https://github.com/thvlou/Reference_vault)를 처음부터 다시 디자인하는 프로젝트다.
 
 > **지금 상태 — 디자인 프로토타입 단계**
-> 새 디자인은 `public/folder-ui-preview.html` 한 파일 안에서 만들고 있다.
+> 새 디자인은 `public/prototype.html` 한 파일 안에서 만들고 있다.
 > `src/` 의 React 앱은 아직 리디자인 이전의 Reference Vault 그대로이며,
 > 프로토타입이 확정되면 그때 앱으로 옮긴다.
 
@@ -27,7 +27,7 @@ npm install
 npm run dev
 ```
 
-브라우저에서 `http://localhost:5173/folder-ui-preview.html` 을 연다.
+브라우저에서 `http://localhost:5173/prototype.html` 을 연다.
 앱 번들과 무관한 독립 HTML이다. 외부 라이브러리 없이 이 파일 하나로 동작하고,
 웹폰트만 Google Fonts 에서 받는다.
 
@@ -59,7 +59,7 @@ npm run dev
 
 ## 설계 메모
 
-구현하며 정한 것 중 다시 보면 이유를 잊기 쉬운 것들. 자세한 과정은 `devlog.md`.
+구현하며 정한 것 중 다시 보면 이유를 잊기 쉬운 것들. 자세한 과정은 `docs/devlog.md`.
 
 - **카드 배치는 Originkit CoverflowGallery 의 계산식**을 그대로 가져오고,
   가장자리 카드가 링을 따라 뒤로 말려 들어가도록 곡률만 더했다.
@@ -79,19 +79,30 @@ npm run dev
 ## 구조
 
 ```
-public/
-├─ folder-ui-preview.html   리디자인 프로토타입 (현재 작업 대상)
-├─ gleora-logo.svg          로고 — Figma 벡터 내보내기
-├─ hand-knuckles.png        GRAPHIC 손 — 손등, 카드 뒤 레이어
-├─ hand-fingers.png         GRAPHIC 손 — 손가락, 카드 앞 레이어
-├─ folder-ui-accordion.html 이전 탐색안 (아코디언) — 참고용
-├─ folder-ui-patterns.html  이전 탐색안 (패턴) — 참고용
-└─ hit-me-demo.html         Reference Vault 시절 버튼 효과 비교 — 참고용
-
-src/                        Reference Vault React 앱 (리디자인 전)
-src/assets/hand.png         GRAPHIC 손 원본 — 위 두 장은 여기서 잘라냈다
-api/notify.ts               링크 제안 → Slack 알림 (Vercel Edge Function)
+gleora/
+├─ public/                         정적 파일 (dev 서버 루트로 서빙)
+│  ├─ prototype.html               리디자인 프로토타입 — 현재 작업 대상
+│  ├─ gleora-logo.svg              로고
+│  ├─ hand-knuckles.png            GRAPHIC 손 — 손등, 카드 뒤 레이어
+│  ├─ hand-fingers.png             GRAPHIC 손 — 손가락, 카드 앞 레이어
+│  └─ fonts/                       PP Palma
+│
+├─ src/                            React 앱 (리디자인 전 Reference Vault)
+├─ api/notify.ts                   링크 제안 → Slack 알림 (Vercel Edge Function)
+│
+├─ design/                         앱에 들어가지 않는 디자인 자료
+│  ├─ explorations/                지나온 탐색안 — 참고용
+│  │  ├─ folder-accordion.html
+│  │  ├─ folder-patterns.html
+│  │  └─ hit-me-button.html
+│  └─ assets/                      원본 소스
+│     ├─ hand-source.png           손 원본 — public 의 두 장을 여기서 잘라냈다
+│     └─ gleora-logo-figma-export.svg
+│
+└─ docs/                           기획 · 기록 문서
 ```
+
+탐색안은 `http://localhost:5173/design/explorations/<파일명>` 으로 열 수 있다.
 
 ---
 
@@ -113,11 +124,14 @@ Slack 알림까지 확인하려면 `.env.example` 을 참고해 `.env.local` 에
 
 | 파일 | 내용 |
 |---|---|
-| `devlog.md` | 작업 로그와 트러블슈팅 |
-| `PRD-v1.md` | 리디자인 기획서 |
-| `pattern-research.md` | 피쳐별 패턴 설계 근거 |
-| `batch-01-design.md` | 첫 레퍼런스 배치 설계 |
-| `PROJECT_LOG.md` | Reference Vault 제작 기록 |
+| `docs/devlog.md` | 작업 로그와 트러블슈팅 |
+| `docs/prd-v1.md` | 리디자인 기획서 |
+| `docs/pattern-research.md` | 피쳐별 패턴 설계 근거 |
+| `docs/batch-01-design.md` | 첫 레퍼런스 배치 설계 |
+| `docs/reference-vault-log.md` | Reference Vault 제작 기록 |
+
+> `docs/devlog.md` 안의 파일 경로는 기록 당시 이름 그대로다
+> (예: `folder-ui-preview.html` → 현재 `public/prototype.html`).
 
 ---
 
